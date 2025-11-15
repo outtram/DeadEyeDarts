@@ -10,9 +10,12 @@ You need **2 terminal windows** running simultaneously:
 
 ### Terminal 1: Start darts-caller
 ```bash
-cd ~/CODE/darts-caller
+cd ~/CODE
 ./start_darts.sh
 ```
+
+**First run:** Takes 2-3 minutes (auto-installs everything)
+**After that:** Starts in seconds!
 
 **Wait for:** "CURRENT VOICE-PACK: ..." message
 
@@ -26,9 +29,22 @@ cd ~/CODE
 bash run_deadeyedarts.sh
 ```
 
+**First run:** Takes 30 seconds (auto-installs packages)
+**After that:** Starts instantly!
+
 **Wait for:** "🎯 DeadEyeDarts Connected to darts-caller!"
 
 **Keep running!** ✅
+
+---
+
+## ✨ What's Happening?
+
+Both scripts use **virtual environments** which means:
+- ✅ No package conflicts
+- ✅ Correct Python versions every time
+- ✅ No manual dependency installation needed
+- ✅ Works the same on every computer
 
 ---
 

@@ -65,19 +65,16 @@ chmod +x start_darts.sh
 chmod +x run_deadeyedarts.sh
 ```
 
-### 3. Install Python dependencies
+### 3. ~~Install Python dependencies~~ SKIP THIS!
 
-**For darts-caller:**
-```bash
-cd darts-caller
-pip3 install -r requirements.txt
-cd ..
-```
+**Great news!** Both scripts now use virtual environments and auto-install dependencies!
 
-**For DeadEyeDarts:**
-```bash
-pip3 install python-socketio
-```
+You don't need to manually install anything. The scripts handle:
+- Creating isolated virtual environments
+- Installing correct package versions
+- Preventing version conflicts
+
+Just move to the next step!
 
 ---
 
@@ -89,12 +86,18 @@ pip3 install python-socketio
 ./start_darts.sh
 ```
 
-**What to expect:**
-- First run downloads voice packs (takes 2-3 minutes)
+**What to expect on FIRST RUN:**
+- Creates virtual environment (`darts-venv/`)
+- Installs all dependencies (2-3 minutes)
+- Downloads voice packs
 - You'll see: "CURRENT VOICE-PACK: en-us-sage-female"
 - Server runs on https://localhost:8079
 
 **Keep this terminal running!**
+
+**Subsequent runs:** Starts in seconds!
+
+---
 
 ### Terminal 2: Start DeadEyeDarts game
 
@@ -102,13 +105,20 @@ pip3 install python-socketio
 bash run_deadeyedarts.sh
 ```
 
-**What to expect:**
+**What to expect on FIRST RUN:**
+- Creates virtual environment (`deadeyedarts-venv/`)
+- Installs dependencies (30 seconds)
+- Connects to darts-caller
+
+**You'll see:**
 ```
 🎯 DeadEyeDarts Connected to darts-caller!
 Waiting for dart throws...
 ```
 
 **Keep this terminal running too!**
+
+**Subsequent runs:** Starts instantly!
 
 ---
 
@@ -163,11 +173,14 @@ CODE/
 ├── DeadEyeDarts/          # YOUR zombie darts game!
 │   └── deadeyedarts_client.py  # YOUR game logic
 ├── darts-media/           # Voice packs (auto-downloaded)
-├── darts-venv/            # Python virtual environment (auto-created)
+├── darts-venv/            # Virtual env for darts-caller (auto-created)
+├── deadeyedarts-venv/     # Virtual env for DeadEyeDarts (auto-created)
 ├── start_darts.sh         # Start darts-caller server
 ├── run_deadeyedarts.sh    # Start YOUR game
 └── SETUP_FIRST_TIME.md    # This file!
 ```
+
+**Note:** The virtual environments keep Python packages isolated - no version conflicts!
 
 ---
 

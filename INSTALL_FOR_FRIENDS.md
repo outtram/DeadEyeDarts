@@ -55,19 +55,16 @@ cd DeadEyeDarts
 
 ---
 
-### Step 3: Install Dependencies
+### Step 3: ~~Install Dependencies~~ SKIP THIS STEP!
 
-**For darts-caller:**
-```bash
-cd ../darts-caller
-pip3 install -r requirements.txt
-cd ../DeadEyeDarts
-```
+**Good news!** Both scripts now automatically create virtual environments and install dependencies on first run. You don't need to do anything manually!
 
-**For DeadEyeDarts:**
-```bash
-pip3 install python-socketio urllib3
-```
+The scripts will:
+- Create isolated virtual environments (no conflicts!)
+- Install the correct package versions automatically
+- Take care of everything for you
+
+Just skip to Step 4!
 
 ---
 
@@ -114,9 +111,14 @@ You need **TWO terminal windows open**:
 
 **Terminal 1: Start darts-caller**
 ```bash
-cd ~/Desktop/darts-caller
+cd ~/Desktop/DeadEyeDarts
 ./start_darts.sh
 ```
+
+**First run will:**
+- Create a virtual environment (`darts-venv/`)
+- Install all dependencies automatically (2-3 minutes)
+- Download voice packs
 
 Wait for: "CURRENT VOICE-PACK: ..." message
 **Keep this running!**
@@ -129,8 +131,14 @@ cd ~/Desktop/DeadEyeDarts
 bash run_deadeyedarts.sh
 ```
 
+**First run will:**
+- Create a virtual environment (`deadeyedarts-venv/`)
+- Install dependencies automatically (30 seconds)
+
 Wait for: "🎯 DeadEyeDarts Connected to darts-caller!"
 **Keep this running!**
+
+**Note:** After the first run, both scripts start in just a few seconds!
 
 ---
 
@@ -180,12 +188,17 @@ Wait for: "🎯 DeadEyeDarts Connected to darts-caller!"
 
 ```
 Desktop/
-├── DeadEyeDarts/          # Troy's zombie game
-│   ├── DeadEyeDarts/      # Game code
-│   ├── start_darts.sh     # Start darts-caller
-│   └── run_deadeyedarts.sh # Start the game
-└── darts-caller/          # Required server software
+├── DeadEyeDarts/              # Troy's zombie game
+│   ├── DeadEyeDarts/          # Game code
+│   ├── darts-venv/            # Virtual environment (auto-created)
+│   ├── deadeyedarts-venv/     # Virtual environment (auto-created)
+│   ├── darts-media/           # Voice packs (auto-downloaded)
+│   ├── start_darts.sh         # Start darts-caller
+│   └── run_deadeyedarts.sh    # Start the game
+└── darts-caller/              # Required server software
 ```
+
+**Note:** The `*-venv/` folders are created automatically and keep Python packages isolated - no conflicts!
 
 ---
 

@@ -5,6 +5,7 @@ __pycache__/
 *.so
 .Python
 darts-venv/
+deadeyedarts-venv/
 venv/
 ENV/
 env/
