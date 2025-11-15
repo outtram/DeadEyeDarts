@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+darts-venv/
+venv/
+ENV/
+env/
+
+# Downloaded media files
+darts-media/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Claude AI
+.claude/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Archive folder (old/unused files)
+_archive/
+
+# Third-party repositories (managed separately)
+darts-caller/
