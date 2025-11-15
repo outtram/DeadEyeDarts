@@ -58,6 +58,8 @@ if [ ! -f "$VENV_DIR/.dependencies_installed" ]; then
     pip install --upgrade \
         python-socketio \
         urllib3 \
+        requests \
+        websocket-client \
         --quiet
 
     # Mark dependencies as installed
