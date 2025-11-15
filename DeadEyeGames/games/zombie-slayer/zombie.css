@@ -1,0 +1,493 @@
+/**
+ * Zombie Slayer Game Styles
+ * Game-specific styling for the zombie dart game
+ */
+
+/* =============================================================================
+   GAME LAYOUT
+   ============================================================================= */
+.game-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.header-title {
+    flex: 1;
+    text-align: center;
+}
+
+.header-title h1 {
+    font-size: 2.5rem;
+    margin: 0;
+}
+
+.back-btn {
+    min-width: 150px;
+}
+
+/* =============================================================================
+   STATS PANEL
+   ============================================================================= */
+.stats-panel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-panel);
+    border: 2px solid var(--neon-green);
+    border-radius: 4px;
+    box-shadow: 0 0 10px var(--neon-green);
+}
+
+.stat-box {
+    background: var(--bg-darker);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 4px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 0 5px var(--neon-cyan);
+}
+
+.stat-value {
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--neon-green);
+    text-shadow: 0 0 10px var(--neon-green);
+    margin-top: 0.5rem;
+}
+
+/* =============================================================================
+   INSTRUCTIONS PANEL
+   ============================================================================= */
+.instructions-panel {
+    background: var(--bg-panel);
+    border: 2px solid var(--neon-magenta);
+    border-radius: 4px;
+    padding: 3rem;
+    text-align: center;
+    max-width: 800px;
+    margin: 4rem auto;
+    box-shadow: 0 0 20px var(--neon-magenta);
+}
+
+.instructions-panel h3 {
+    color: var(--neon-cyan);
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.instructions-panel p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.8;
+}
+
+.instructions-panel ul {
+    list-style: none;
+    text-align: left;
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: 0;
+}
+
+.instructions-panel li {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.btn-large {
+    padding: 1.5rem 3rem;
+    font-size: 1.3rem;
+    margin-top: 1rem;
+}
+
+/* =============================================================================
+   GAME AREA
+   ============================================================================= */
+.game-area {
+    position: relative;
+    min-height: 500px;
+}
+
+.zombies-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3rem;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* =============================================================================
+   ZOMBIE STYLING
+   ============================================================================= */
+.zombie {
+    background: var(--bg-panel);
+    border: 3px solid var(--neon-green);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 0 20px var(--neon-green);
+    transition: all 0.3s ease;
+    animation: zombiePulse 2s infinite;
+}
+
+@keyframes zombiePulse {
+    0%, 100% {
+        box-shadow: 0 0 20px var(--neon-green);
+    }
+    50% {
+        box-shadow: 0 0 30px var(--neon-green), 0 0 40px var(--neon-green);
+    }
+}
+
+.zombie.hit {
+    animation: zombieHit 0.5s ease-out;
+    border-color: var(--status-error);
+}
+
+@keyframes zombieHit {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2) rotate(10deg);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+.zombie.respawn {
+    animation: zombieRespawn 0.5s ease-out;
+}
+
+@keyframes zombieRespawn {
+    0% {
+        transform: scale(0) rotate(-180deg);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.zombie-body {
+    font-size: 8rem;
+    line-height: 1;
+    margin-bottom: 1rem;
+    animation: zombieSway 3s infinite;
+}
+
+@keyframes zombieSway {
+    0%, 100% {
+        transform: rotate(-5deg);
+    }
+    50% {
+        transform: rotate(5deg);
+    }
+}
+
+.zombie-target {
+    background: var(--bg-darker);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 1rem 0;
+    box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.target-label {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.target-number {
+    font-size: 4rem;
+    font-weight: bold;
+    color: var(--neon-cyan);
+    text-shadow:
+        0 0 10px var(--neon-cyan),
+        0 0 20px var(--neon-cyan),
+        0 0 30px var(--neon-cyan);
+    animation: targetGlow 1.5s infinite;
+}
+
+@keyframes targetGlow {
+    0%, 100% {
+        text-shadow:
+            0 0 10px var(--neon-cyan),
+            0 0 20px var(--neon-cyan);
+    }
+    50% {
+        text-shadow:
+            0 0 20px var(--neon-cyan),
+            0 0 30px var(--neon-cyan),
+            0 0 40px var(--neon-cyan);
+    }
+}
+
+.zombie-health-bar {
+    height: 10px;
+    background: var(--bg-darker);
+    border: 1px solid var(--neon-green);
+    border-radius: 5px;
+    margin-top: 1rem;
+    overflow: hidden;
+}
+
+.health-fill {
+    height: 100%;
+    width: 100%;
+    background: var(--neon-green);
+    box-shadow: 0 0 10px var(--neon-green);
+    transition: width 0.3s ease;
+}
+
+/* =============================================================================
+   GAME MESSAGES
+   ============================================================================= */
+.game-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 2rem 4rem;
+    border-radius: 8px;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.game-message.show {
+    opacity: 1;
+    animation: messagePopup 1s ease-out;
+}
+
+@keyframes messagePopup {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+.game-message.hit {
+    background: var(--bg-panel);
+    border: 3px solid var(--neon-green);
+    color: var(--neon-green);
+    box-shadow:
+        0 0 20px var(--neon-green),
+        inset 0 0 20px rgba(0, 255, 0, 0.2);
+}
+
+.game-message.miss {
+    background: var(--bg-panel);
+    border: 3px solid var(--status-error);
+    color: var(--status-error);
+    box-shadow:
+        0 0 20px var(--status-error),
+        inset 0 0 20px rgba(255, 0, 51, 0.2);
+}
+
+/* =============================================================================
+   GAME OVER SCREEN
+   ============================================================================= */
+.game-over-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.game-over-content {
+    background: var(--bg-panel);
+    border: 3px solid var(--status-error);
+    border-radius: 8px;
+    padding: 4rem;
+    text-align: center;
+    max-width: 600px;
+    box-shadow:
+        0 0 30px var(--status-error),
+        inset 0 0 30px rgba(255, 0, 51, 0.1);
+    animation: gameOverPopup 0.5s ease-out;
+}
+
+@keyframes gameOverPopup {
+    0% {
+        transform: scale(0) rotate(-10deg);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.game-over-title {
+    font-size: 4rem;
+    color: var(--status-error);
+    text-shadow:
+        0 0 10px var(--status-error),
+        0 0 20px var(--status-error),
+        0 0 30px var(--status-error);
+    margin-bottom: 1rem;
+    animation: glitch 1s infinite;
+}
+
+.game-over-subtitle {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 3rem;
+}
+
+.final-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.final-stat {
+    background: var(--bg-darker);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 4px;
+    padding: 2rem;
+}
+
+.final-stat-label {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+}
+
+.final-stat-value {
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px var(--neon-cyan);
+}
+
+.game-over-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 3rem;
+    flex-wrap: wrap;
+}
+
+/* =============================================================================
+   SCREEN EFFECTS
+   ============================================================================= */
+@keyframes screenShake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-5px, 5px); }
+    20% { transform: translate(5px, -5px); }
+    30% { transform: translate(-5px, -5px); }
+    40% { transform: translate(5px, 5px); }
+    50% { transform: translate(-5px, 5px); }
+    60% { transform: translate(5px, -5px); }
+    70% { transform: translate(-5px, -5px); }
+    80% { transform: translate(5px, 5px); }
+    90% { transform: translate(-5px, -5px); }
+}
+
+.screen-shake {
+    animation: screenShake 0.5s;
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================= */
+@media (max-width: 768px) {
+    .game-header {
+        flex-direction: column;
+    }
+
+    .header-title h1 {
+        font-size: 1.8rem;
+    }
+
+    .stats-panel {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .zombies-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .zombie-body {
+        font-size: 6rem;
+    }
+
+    .target-number {
+        font-size: 3rem;
+    }
+
+    .game-message {
+        font-size: 2rem;
+        padding: 1rem 2rem;
+    }
+
+    .game-over-content {
+        padding: 2rem;
+        margin: 1rem;
+    }
+
+    .game-over-title {
+        font-size: 2.5rem;
+    }
+
+    .final-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .game-over-buttons {
+        flex-direction: column;
+    }
+}

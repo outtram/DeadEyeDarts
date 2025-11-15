@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Slayer - DeadEyeGames</title>
+
+    <!-- Cyberpunk CSS Theme -->
+    <link rel="stylesheet" href="/static/css/cyberpunk.css">
+
+    <!-- Zombie Game CSS -->
+    <link rel="stylesheet" href="/games/zombie-slayer/zombie.css">
+
+    <!-- Socket.IO for WebSocket communication -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <!-- Darts Client WebSocket Handler -->
+    <script src="/static/js/darts-client.js"></script>
+</head>
+<body>
+    <!-- Game Container -->
+    <div class="game-container">
+
+        <!-- Header with Back Button and Connection Status -->
+        <div class="game-header">
+            <a href="/" class="btn btn-secondary back-btn">← Back to Home</a>
+
+            <div class="header-title">
+                <h1>🧟 ZOMBIE SLAYER 🧟</h1>
+            </div>
+
+            <div id="connection-status" class="status-indicator disconnected">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- Stats Display -->
+        <div class="stats-panel">
+            <div class="stat-box">
+                <div class="stat-label">Score</div>
+                <div id="score" class="stat-value">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Kills</div>
+                <div id="kills" class="stat-value">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Misses</div>
+                <div id="misses" class="stat-value">0/3</div>
+            </div>
+        </div>
+
+        <!-- Game Instructions -->
+        <div id="instructions" class="instructions-panel">
+            <h3>How to Play</h3>
+            <p>
+                Hit the dartboard numbers shown on the zombies to eliminate them!
+                Each zombie has a random target number (1-20).
+            </p>
+            <ul>
+                <li>✓ Hit the correct number to kill the zombie</li>
+                <li>✓ Doubles and Triples give bonus points!</li>
+                <li>✗ Miss 3 times and it's GAME OVER</li>
+            </ul>
+            <button id="start-btn" class="btn btn-primary btn-large">
+                START GAME
+            </button>
+        </div>
+
+        <!-- Zombies Display Area -->
+        <div id="game-area" class="game-area" style="display: none;">
+            <div class="zombies-container">
+                <!-- Zombie 1 -->
+                <div class="zombie" id="zombie1">
+                    <div class="zombie-body">🧟</div>
+                    <div class="zombie-target">
+                        <div class="target-label">TARGET</div>
+                        <div class="target-number" id="target1">20</div>
+                    </div>
+                    <div class="zombie-health-bar">
+                        <div class="health-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Zombie 2 -->
+                <div class="zombie" id="zombie2">
+                    <div class="zombie-body">🧟</div>
+                    <div class="zombie-target">
+                        <div class="target-label">TARGET</div>
+                        <div class="target-number" id="target2">15</div>
+                    </div>
+                    <div class="zombie-health-bar">
+                        <div class="health-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Messages -->
+            <div id="game-message" class="game-message"></div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over" class="game-over-screen" style="display: none;">
+            <div class="game-over-content">
+                <h2 class="game-over-title">GAME OVER</h2>
+                <p class="game-over-subtitle">You've been overrun by zombies!</p>
+
+                <div class="final-stats">
+                    <div class="final-stat">
+                        <div class="final-stat-label">Total Kills</div>
+                        <div class="final-stat-value" id="final-kills">0</div>
+                    </div>
+                    <div class="final-stat">
+                        <div class="final-stat-label">Final Score</div>
+                        <div class="final-stat-value" id="final-score">0</div>
+                    </div>
+                </div>
+
+                <div class="game-over-buttons">
+                    <button id="restart-btn" class="btn btn-primary btn-large">
+                        PLAY AGAIN
+                    </button>
+                    <a href="/" class="btn btn-secondary btn-large">
+                        BACK TO HOME
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zombie Game Logic -->
+    <script src="/games/zombie-slayer/zombie.js"></script>
+
+    <script>
+        /**
+         * Initialize the game when page loads
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Zombie Slayer: Page loaded, initializing...');
+
+            // Initialize darts connection
+            initializeDartsConnection();
+
+            // Setup game event listeners
+            setupGameControls();
+
+            console.log('Zombie Slayer: Initialization complete');
+        });
+
+        /**
+         * Initialize WebSocket connection to darts-caller
+         */
+        function initializeDartsConnection() {
+            DartsClient.init({
+                onConnected: function() {
+                    console.log('Zombie Slayer: Connected to server');
+                },
+
+                onDisconnected: function() {
+                    console.log('Zombie Slayer: Disconnected from server');
+                    // Pause game if disconnected during play
+                    if (ZombieGame.isGameActive()) {
+                        alert('Connection lost! Game paused.');
+                    }
+                },
+
+                onDartsStatus: function(connected) {
+                    console.log('Zombie Slayer: Darts-caller status:', connected);
+                    // Could disable start button if not connected
+                    const startBtn = document.getElementById('start-btn');
+                    if (startBtn && !connected) {
+                        startBtn.disabled = true;
+                        startBtn.textContent = 'WAITING FOR DARTS-CALLER...';
+                    } else if (startBtn && connected) {
+                        startBtn.disabled = false;
+                        startBtn.textContent = 'START GAME';
+                    }
+                },
+
+                onDartThrown: function(dart) {
+                    console.log('Zombie Slayer: Dart thrown:', dart);
+
+                    // Only process dart if game is active
+                    if (ZombieGame.isGameActive()) {
+                        ZombieGame.handleDartThrow(dart);
+                    }
+                }
+            });
+        }
+
+        /**
+         * Setup game control button event listeners
+         */
+        function setupGameControls() {
+            // Start game button
+            const startBtn = document.getElementById('start-btn');
+            if (startBtn) {
+                startBtn.addEventListener('click', function() {
+                    // Check if darts-caller is connected
+                    const status = DartsClient.getStatus();
+                    if (!status.dartsCallerConnected) {
+                        alert('Please ensure darts-caller is running at https://localhost:8079');
+                        return;
+                    }
+
+                    // Start the game
+                    ZombieGame.startGame();
+                });
+            }
+
+            // Restart game button
+            const restartBtn = document.getElementById('restart-btn');
+            if (restartBtn) {
+                restartBtn.addEventListener('click', function() {
+                    ZombieGame.startGame();
+                });
+            }
+        }
+    </script>
+</body>
+</html>

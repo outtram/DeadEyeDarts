@@ -1,0 +1,16 @@
+# DeadEyeGames Python Dependencies
+# Flask web framework for serving web pages and static files
+Flask==3.0.0
+
+# Flask-SocketIO for real-time WebSocket communication with browser clients
+Flask-SocketIO==5.3.5
+
+# python-socketio for connecting to darts-caller WebSocket server
+# [client] extra includes websocket-client needed for client functionality
+python-socketio[client]==5.10.0
+
+# Werkzeug is Flask's WSGI utility library (dependency of Flask)
+Werkzeug==3.0.1
+
+# eventlet for async/event-driven Socket.IO server
+eventlet==0.33.3

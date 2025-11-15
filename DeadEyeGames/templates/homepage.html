@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeadEyeGames - Retro Cyberpunk Dart Gaming</title>
+
+    <!-- Cyberpunk CSS Theme -->
+    <link rel="stylesheet" href="/static/css/cyberpunk.css">
+
+    <!-- Socket.IO for WebSocket communication -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <!-- Darts Client WebSocket Handler -->
+    <script src="/static/js/darts-client.js"></script>
+
+    <style>
+        /* Homepage-specific styles */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            position: relative;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: neonFlicker 3s infinite alternate;
+        }
+
+        @keyframes neonFlicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow:
+                    0 0 10px var(--neon-cyan),
+                    0 0 20px var(--neon-cyan),
+                    0 0 30px var(--neon-cyan),
+                    0 0 40px var(--neon-cyan);
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: var(--neon-magenta);
+            text-shadow: 0 0 10px var(--neon-magenta);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .connection-panel {
+            background: var(--bg-panel);
+            border: 2px solid var(--neon-green);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin: 2rem auto;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        .games-section {
+            margin: 4rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+            border-top: 2px solid var(--neon-purple);
+            color: var(--text-dim);
+        }
+
+        .instructions {
+            background: var(--bg-panel);
+            border: 2px solid var(--neon-orange);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .instructions h3 {
+            color: var(--neon-orange);
+            margin-bottom: 1rem;
+        }
+
+        .instructions ol {
+            color: var(--text-secondary);
+            margin-left: 2rem;
+            line-height: 1.8;
+        }
+
+        .instructions li {
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .tagline {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero fade-in">
+            <h1 class="hero-title">DEADEYE GAMES</h1>
+            <p class="tagline">Retro Cyberpunk Dart Gaming Platform</p>
+
+            <!-- Connection Status Panel -->
+            <div class="connection-panel">
+                <h3>System Status</h3>
+                <div id="connection-status" class="status-indicator disconnected">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-dim);">
+                    Make sure darts-caller is running at https://localhost:8079
+                </p>
+            </div>
+        </div>
+
+        <!-- Instructions Panel -->
+        <div class="instructions fade-in">
+            <h3>How to Play</h3>
+            <ol>
+                <li><strong>Ensure darts-caller is running</strong> at https://localhost:8079</li>
+                <li><strong>Wait for connection status</strong> to show "Connected" above</li>
+                <li><strong>Select a game</strong> from the options below</li>
+                <li><strong>Throw darts</strong> at your autodarts board to play!</li>
+                <li><strong>Have fun</strong> and compete with friends!</li>
+            </ol>
+        </div>
+
+        <!-- Games Section -->
+        <section class="games-section fade-in">
+            <h2 class="section-title">Select Your Game</h2>
+
+            <div class="game-grid">
+                <!-- Zombie Slayer Game Card -->
+                <a href="/games/zombie-slayer" class="game-card">
+                    <div class="game-icon">🧟</div>
+                    <h3>Zombie Slayer</h3>
+                    <p>
+                        Kill zombies by hitting their assigned dartboard numbers!
+                        Each zombie has a random target (1-20). Hit it to eliminate
+                        the zombie and spawn a new one. Miss 3 times and it's game over!
+                    </p>
+                    <div style="margin-top: 1rem;">
+                        <span class="btn btn-primary" style="pointer-events: none;">
+                            Play Now
+                        </span>
+                    </div>
+                </a>
+
+                <!-- Placeholder for Future Games -->
+                <div class="game-card" style="opacity: 0.5; cursor: not-allowed;">
+                    <div class="game-icon">🎯</div>
+                    <h3>Coming Soon</h3>
+                    <p>
+                        More exciting dart games are on the way!
+                        The modular architecture makes it easy to add new games.
+                        Stay tuned for updates!
+                    </p>
+                    <div style="margin-top: 1rem;">
+                        <span class="btn btn-secondary" style="pointer-events: none; opacity: 0.5;">
+                            Locked
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Placeholder for Future Games -->
+                <div class="game-card" style="opacity: 0.5; cursor: not-allowed;">
+                    <div class="game-icon">⚡</div>
+                    <h3>Coming Soon</h3>
+                    <p>
+                        More exciting dart games are on the way!
+                        The modular architecture makes it easy to add new games.
+                        Stay tuned for updates!
+                    </p>
+                    <div style="margin-top: 1rem;">
+                        <span class="btn btn-secondary" style="pointer-events: none; opacity: 0.5;">
+                            Locked
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>DeadEyeGames v1.0 - Retro Cyberpunk Dart Gaming Platform</p>
+            <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+                Powered by Flask, Socket.IO, and darts-caller integration
+            </p>
+            <p style="margin-top: 1rem; color: var(--neon-cyan);">
+                Throw darts. Play games. Have fun.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        /**
+         * Homepage JavaScript
+         * Handles connection status updates and initialization
+         */
+
+        // Initialize darts client connection
+        DartsClient.init({
+            onConnected: function() {
+                console.log('Homepage: Connected to server');
+                showNotification('Connected to DeadEyeGames server', 'success');
+            },
+
+            onDisconnected: function() {
+                console.log('Homepage: Disconnected from server');
+                showNotification('Disconnected from server', 'error');
+            },
+
+            onDartsStatus: function(connected) {
+                console.log('Homepage: Darts-caller status:', connected);
+                if (connected) {
+                    showNotification('Darts-caller connected! Ready to play!', 'success');
+                } else {
+                    showNotification('Waiting for darts-caller connection...', 'warning');
+                }
+            },
+
+            onDartThrown: function(dart) {
+                // Homepage doesn't need to handle dart throws
+                // Individual games will handle them
+                console.log('Homepage: Dart thrown (not handling):', dart);
+            }
+        });
+
+        /**
+         * Show temporary notification to user
+         * @param {string} message - Notification message
+         * @param {string} type - Notification type (success, error, warning)
+         */
+        function showNotification(message, type) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 2rem;
+                background: var(--bg-panel);
+                border: 2px solid ${type === 'success' ? 'var(--neon-green)' : type === 'error' ? 'var(--status-error)' : 'var(--status-warning)'};
+                border-radius: 4px;
+                color: ${type === 'success' ? 'var(--neon-green)' : type === 'error' ? 'var(--status-error)' : 'var(--status-warning)'};
+                box-shadow: 0 0 10px ${type === 'success' ? 'var(--neon-green)' : type === 'error' ? 'var(--status-error)' : 'var(--status-warning)'};
+                z-index: 10000;
+                animation: fadeIn 0.3s ease-out;
+            `;
+
+            document.body.appendChild(notification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Add fadeOut animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOut {
+                from { opacity: 1; transform: translateX(0); }
+                to { opacity: 0; transform: translateX(20px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Log startup info
+        console.log('DeadEyeGames Homepage Loaded');
+        console.log('Waiting for darts-caller connection...');
+    </script>
+</body>
+</html>
