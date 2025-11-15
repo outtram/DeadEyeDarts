@@ -2,8 +2,8 @@
  * Zombie Slayer Game Logic
  *
  * Game Mechanics:
- * - 2 zombies on screen at all times
- * - Each zombie has a random target number (1-20)
+ * - 1 zombie on screen at a time
+ * - Zombie has a random target number (1-20)
  * - Hit the correct number to kill the zombie
  * - Zombie respawns with new random number
  * - Score points for each kill (100 base, multiplied by dart multiplier)
@@ -23,14 +23,13 @@ const ZombieGame = (function() {
     let misses = 0;
     const MAX_MISSES = 3;
 
-    // Zombie targets
-    let zombie1Target = 0;
-    let zombie2Target = 0;
+    // Zombie target (only 1 zombie now)
+    let zombieTarget = 0;
 
     // DOM elements
     let scoreElement, killsElement, missesElement;
-    let target1Element, target2Element;
-    let zombie1Element, zombie2Element;
+    let targetElement;
+    let zombieElement;
     let gameArea, instructionsPanel, gameOverScreen;
     let gameMessage;
 
@@ -41,14 +40,18 @@ const ZombieGame = (function() {
         scoreElement = document.getElementById('score');
         killsElement = document.getElementById('kills');
         missesElement = document.getElementById('misses');
-        target1Element = document.getElementById('target1');
-        target2Element = document.getElementById('target2');
-        zombie1Element = document.getElementById('zombie1');
-        zombie2Element = document.getElementById('zombie2');
+        targetElement = document.getElementById('target1');
+        zombieElement = document.getElementById('zombie1');
         gameArea = document.getElementById('game-area');
         instructionsPanel = document.getElementById('instructions');
         gameOverScreen = document.getElementById('game-over');
         gameMessage = document.getElementById('game-message');
+
+        // Hide second zombie
+        const zombie2Element = document.getElementById('zombie2');
+        if (zombie2Element) {
+            zombie2Element.style.display = 'none';
+        }
     }
 
     /**
@@ -84,9 +87,8 @@ const ZombieGame = (function() {
         gameArea.style.display = 'block';
         gameOverScreen.style.display = 'none';
 
-        // Spawn initial zombies
-        spawnZombie(1);
-        spawnZombie(2);
+        // Spawn initial zombie (only 1 now)
+        spawnZombie();
 
         console.log('ZombieGame: Game started');
         showMessage('START!', 'hit');
@@ -94,24 +96,16 @@ const ZombieGame = (function() {
 
     /**
      * Spawn a zombie with a random target number
-     * @param {number} zombieId - Which zombie (1 or 2)
      */
-    function spawnZombie(zombieId) {
+    function spawnZombie() {
         const newTarget = randomDartNumber();
 
-        if (zombieId === 1) {
-            zombie1Target = newTarget;
-            target1Element.textContent = newTarget;
-            zombie1Element.classList.add('respawn');
-            setTimeout(() => zombie1Element.classList.remove('respawn'), 500);
-        } else {
-            zombie2Target = newTarget;
-            target2Element.textContent = newTarget;
-            zombie2Element.classList.add('respawn');
-            setTimeout(() => zombie2Element.classList.remove('respawn'), 500);
-        }
+        zombieTarget = newTarget;
+        targetElement.textContent = newTarget;
+        zombieElement.classList.add('respawn');
+        setTimeout(() => zombieElement.classList.remove('respawn'), 500);
 
-        console.log(`ZombieGame: Zombie ${zombieId} spawned with target ${newTarget}`);
+        console.log(`ZombieGame: Zombie spawned with target ${newTarget}`);
     }
 
     /**
@@ -152,30 +146,20 @@ const ZombieGame = (function() {
 
         console.log(`ZombieGame: Dart thrown - Segment ${segment} (${multiplierName})`);
 
-        // Check if dart hit any zombie target
-        let hitZombie = false;
-
-        if (segment === zombie1Target) {
-            hitZombie = true;
-            killZombie(1, multiplier);
-        } else if (segment === zombie2Target) {
-            hitZombie = true;
-            killZombie(2, multiplier);
-        }
-
-        // If no hit, register a miss
-        if (!hitZombie) {
+        // Check if dart hit the zombie target
+        if (segment === zombieTarget) {
+            killZombie(multiplier);
+        } else {
             registerMiss(segment);
         }
     }
 
     /**
      * Kill a zombie and respawn a new one
-     * @param {number} zombieId - Which zombie was killed (1 or 2)
      * @param {number} multiplier - Dart multiplier for bonus points
      */
-    function killZombie(zombieId, multiplier) {
-        console.log(`ZombieGame: Zombie ${zombieId} killed!`);
+    function killZombie(multiplier) {
+        console.log('ZombieGame: Zombie killed!');
 
         // Calculate points (100 base * multiplier)
         const points = 100 * multiplier;
@@ -186,7 +170,6 @@ const ZombieGame = (function() {
         updateStats();
 
         // Visual feedback
-        const zombieElement = zombieId === 1 ? zombie1Element : zombie2Element;
         zombieElement.classList.add('hit');
 
         // Show hit message
@@ -196,7 +179,7 @@ const ZombieGame = (function() {
         // Play kill animation, then respawn
         setTimeout(() => {
             zombieElement.classList.remove('hit');
-            spawnZombie(zombieId);
+            spawnZombie();
         }, 500);
     }
 
@@ -205,7 +188,7 @@ const ZombieGame = (function() {
      * @param {number} segment - The segment that was hit (but missed target)
      */
     function registerMiss(segment) {
-        console.log(`ZombieGame: Miss! Hit ${segment}, needed ${zombie1Target} or ${zombie2Target}`);
+        console.log(`ZombieGame: Miss! Hit ${segment}, needed ${zombieTarget}`);
 
         misses++;
         updateStats();

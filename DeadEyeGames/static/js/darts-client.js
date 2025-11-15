@@ -35,6 +35,21 @@ const DartsClient = (function() {
     function init(options = {}) {
         handlers = options;
 
+        // If socket already exists, remove old listeners and update handlers
+        if (socket) {
+            console.log('DartsClient: Already initialized, removing old listeners and updating handlers');
+            socket.off('dart_thrown');  // Remove old dart_thrown listeners
+
+            // Re-add dart_thrown listener with new handler
+            socket.on('dart_thrown', (dart) => {
+                console.log('DartsClient: Dart thrown:', dart);
+                if (handlers.onDartThrown) {
+                    handlers.onDartThrown(dart);
+                }
+            });
+            return;
+        }
+
         // Initialize Socket.IO connection to Flask server
         console.log('DartsClient: Initializing connection...');
         socket = io();
