@@ -82,6 +82,19 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✓${NC} Dependencies installed"
 
+# Check if port 5001 is in use and kill it
+echo -e "\n${YELLOW}Checking port 5001...${NC}"
+PORT_PID=$(lsof -ti:5001)
+if [ ! -z "$PORT_PID" ]; then
+    echo -e "${YELLOW}⚠${NC}  Port 5001 is in use by PID $PORT_PID"
+    echo -e "${YELLOW}Stopping existing server...${NC}"
+    kill $PORT_PID
+    sleep 1
+    echo -e "${GREEN}✓${NC} Port 5001 is now available"
+else
+    echo -e "${GREEN}✓${NC} Port 5001 is available"
+fi
+
 # Check if darts-caller is running
 echo -e "\n${YELLOW}Checking darts-caller connection...${NC}"
 if curl -k https://localhost:8079 &> /dev/null; then

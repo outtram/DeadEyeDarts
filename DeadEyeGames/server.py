@@ -148,6 +148,18 @@ def serve_zombie_assets(filename):
     return send_from_directory('games/zombie-slayer', filename)
 
 
+@app.route('/games/heist-crew')
+def heist_game():
+    """Serve the Heist Crew game page"""
+    return send_from_directory('games/heist-crew', 'heist.html')
+
+
+@app.route('/games/heist-crew/<path:filename>')
+def serve_heist_assets(filename):
+    """Serve game-specific assets from heist-crew directory"""
+    return send_from_directory('games/heist-crew', filename)
+
+
 # =============================================================================
 # WEB SOCKET EVENTS (Browser to Server)
 # =============================================================================
@@ -219,4 +231,4 @@ if __name__ == '__main__':
     logger.info("Open your browser to http://localhost:5001 to play!")
 
     # Run Flask app with Socket.IO
-    web_socketio.run(app, host='0.0.0.0', port=5001, debug=False)
+    web_socketio.run(app, host='0.0.0.0', port=5001, debug=False, allow_unsafe_werkzeug=True)

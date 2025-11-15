@@ -14,3 +14,11 @@ Werkzeug==3.0.1
 
 # eventlet for async/event-driven Socket.IO server
 eventlet==0.33.3
+
+# Testing dependencies
+# Playwright for browser automation testing
+playwright==1.56.0
+
+# pytest and pytest-playwright for running browser tests
+pytest==8.4.2
+pytest-playwright==0.7.1

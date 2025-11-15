@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEIST CREW - DeadEyeGames</title>
+
+    <!-- Cyberpunk CSS Theme -->
+    <link rel="stylesheet" href="/static/css/cyberpunk.css">
+
+    <!-- Heist Game CSS -->
+    <link rel="stylesheet" href="/games/heist-crew/heist.css">
+
+    <!-- Socket.IO for WebSocket communication -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <!-- Darts Client WebSocket Handler -->
+    <script src="/static/js/darts-client.js"></script>
+</head>
+<body>
+    <!-- Game Container -->
+    <div class="game-container">
+
+        <!-- Header with Back Button and Connection Status -->
+        <div class="game-header">
+            <a href="/" class="btn btn-secondary back-btn">← Back to Home</a>
+
+            <div class="header-title">
+                <h1>HEIST CREW</h1>
+            </div>
+
+            <div id="connection-status" class="status-indicator disconnected">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- SCREEN 1: Crew Setup -->
+        <div id="crew-setup-screen" class="screen-panel">
+            <div class="setup-content">
+                <h2>ASSEMBLE YOUR CREW</h2>
+                <p class="setup-subtitle">Three roles. Three players. One perfect heist.</p>
+
+                <!-- Player Setup -->
+                <div class="player-setup-container">
+                    <div class="player-setup-box">
+                        <div class="role-icon">💻</div>
+                        <h3>HACKER</h3>
+                        <p class="role-description">Doubles give 2x time bonus. Can bypass one security system per mission.</p>
+                        <input type="text" id="player1-name" class="player-name-input" placeholder="Enter name..." maxlength="15">
+                        <div class="role-badge">ROLE: HACKER</div>
+                    </div>
+
+                    <div class="player-setup-box">
+                        <div class="role-icon">🥷</div>
+                        <h3>INFILTRATOR</h3>
+                        <p class="role-description">Triples count as instant success. Earns stealth bonuses.</p>
+                        <input type="text" id="player2-name" class="player-name-input" placeholder="Enter name..." maxlength="15">
+                        <div class="role-badge">ROLE: INFILTRATOR</div>
+                    </div>
+
+                    <div class="player-setup-box">
+                        <div class="role-icon">💣</div>
+                        <h3>DEMOLITIONS</h3>
+                        <p class="role-description">Bullseye triggers explosive bonus. High risk, high reward.</p>
+                        <input type="text" id="player3-name" class="player-name-input" placeholder="Enter name..." maxlength="15">
+                        <div class="role-badge">ROLE: DEMOLITIONS</div>
+                    </div>
+                </div>
+
+                <button id="assemble-crew-btn" class="btn btn-primary btn-large">ASSEMBLE CREW</button>
+                <div id="setup-error" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: Mission Select -->
+        <div id="mission-select-screen" class="screen-panel" style="display: none;">
+            <div class="mission-select-content">
+                <h2>SELECT YOUR HEIST</h2>
+                <p class="crew-roster">
+                    <span id="crew-member-1"></span> •
+                    <span id="crew-member-2"></span> •
+                    <span id="crew-member-3"></span>
+                </p>
+
+                <div class="missions-grid">
+                    <!-- Mission 1: The Vault Job -->
+                    <div class="mission-card unlocked" data-mission="vault">
+                        <div class="mission-number">MISSION 01</div>
+                        <h3>THE VAULT JOB</h3>
+                        <p class="mission-description">Crack the Central City Bank vault by hitting the combination sequence.</p>
+                        <div class="mission-details">
+                            <div class="detail-item">⏱️ Time: 3:00</div>
+                            <div class="detail-item">🎯 Difficulty: ⭐</div>
+                        </div>
+                        <button class="btn btn-success mission-select-btn">START HEIST</button>
+                    </div>
+
+                    <!-- Mission 2: Data Breach -->
+                    <div class="mission-card locked" data-mission="databreach">
+                        <div class="mission-number">MISSION 02</div>
+                        <h3>DATA BREACH</h3>
+                        <p class="mission-description">Hack corporate servers by targeting odd-numbered systems.</p>
+                        <div class="mission-details">
+                            <div class="detail-item">⏱️ Time: 4:00</div>
+                            <div class="detail-item">🎯 Difficulty: ⭐⭐</div>
+                        </div>
+                        <button class="btn btn-secondary mission-select-btn" disabled>LOCKED</button>
+                    </div>
+
+                    <!-- Mission 3: Diamond District -->
+                    <div class="mission-card locked" data-mission="diamond">
+                        <div class="mission-number">MISSION 03</div>
+                        <h3>DIAMOND DISTRICT</h3>
+                        <p class="mission-description">Steal high-value diamonds from display cases 15-20.</p>
+                        <div class="mission-details">
+                            <div class="detail-item">⏱️ Time: 5:00</div>
+                            <div class="detail-item">🎯 Difficulty: ⭐⭐⭐</div>
+                        </div>
+                        <button class="btn btn-secondary mission-select-btn" disabled>LOCKED</button>
+                    </div>
+
+                    <!-- Mission 4: Casino Royale -->
+                    <div class="mission-card locked" data-mission="casino">
+                        <div class="mission-number">MISSION 04</div>
+                        <h3>CASINO ROYALE</h3>
+                        <p class="mission-description">Beat the house by hitting specific patterns and sequences.</p>
+                        <div class="mission-details">
+                            <div class="detail-item">⏱️ Time: 5:00</div>
+                            <div class="detail-item">🎯 Difficulty: ⭐⭐⭐⭐</div>
+                        </div>
+                        <button class="btn btn-secondary mission-select-btn" disabled>LOCKED</button>
+                    </div>
+
+                    <!-- Mission 5: The Big Score -->
+                    <div class="mission-card locked" data-mission="bigscore">
+                        <div class="mission-number">MISSION 05</div>
+                        <h3>THE BIG SCORE</h3>
+                        <p class="mission-description">The ultimate heist combining all skills. Everything is on the line.</p>
+                        <div class="mission-details">
+                            <div class="detail-item">⏱️ Time: 6:00</div>
+                            <div class="detail-item">🎯 Difficulty: ⭐⭐⭐⭐⭐</div>
+                        </div>
+                        <button class="btn btn-secondary mission-select-btn" disabled>LOCKED</button>
+                    </div>
+                </div>
+
+                <div class="crew-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">CREW REP:</span>
+                        <span id="crew-rep" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">COMPLETED:</span>
+                        <span id="missions-completed" class="stat-value">0/5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: Mission Briefing -->
+        <div id="mission-briefing-screen" class="screen-panel" style="display: none;">
+            <div class="briefing-content">
+                <div class="briefing-header">
+                    <h2 id="briefing-title">MISSION BRIEFING</h2>
+                    <div id="briefing-mission-number" class="mission-number">MISSION 01</div>
+                </div>
+
+                <div class="briefing-story">
+                    <p id="briefing-story-text"></p>
+                </div>
+
+                <div class="briefing-objectives">
+                    <h3>OBJECTIVES:</h3>
+                    <ul id="briefing-objectives-list"></ul>
+                </div>
+
+                <div class="briefing-intel">
+                    <div class="intel-item">
+                        <span class="intel-label">TIME LIMIT:</span>
+                        <span id="briefing-time" class="intel-value"></span>
+                    </div>
+                    <div class="intel-item">
+                        <span class="intel-label">ALERT THRESHOLD:</span>
+                        <span class="intel-value">100%</span>
+                    </div>
+                </div>
+
+                <div class="briefing-buttons">
+                    <button id="start-heist-btn" class="btn btn-success btn-large">START HEIST</button>
+                    <button id="back-to-missions-btn" class="btn btn-secondary">← BACK TO MISSIONS</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: Active Heist -->
+        <div id="active-heist-screen" class="screen-panel" style="display: none;">
+            <div class="heist-hud">
+                <!-- Timer -->
+                <div class="timer-container">
+                    <div class="timer-label">TIME REMAINING</div>
+                    <div id="timer" class="timer-display">3:00</div>
+                </div>
+
+                <!-- Alert Level -->
+                <div class="alert-container">
+                    <div class="alert-label">ALERT LEVEL</div>
+                    <div class="alert-bar">
+                        <div id="alert-fill" class="alert-fill"></div>
+                    </div>
+                    <div id="alert-percentage" class="alert-percentage">0%</div>
+                </div>
+
+                <!-- Mission Progress -->
+                <div class="objective-container">
+                    <div class="objective-label">CURRENT OBJECTIVE</div>
+                    <div id="current-objective" class="objective-display">Hit the combination: ? ? ?</div>
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <div id="progress-text" class="progress-text">0 / 3</div>
+                </div>
+
+                <!-- Active Player & Crew Roster -->
+                <div class="crew-hud">
+                    <div class="active-player-container">
+                        <div class="active-player-label">ACTIVE PLAYER</div>
+                        <div id="active-player" class="active-player-display">
+                            <span id="active-player-icon" class="player-icon">💻</span>
+                            <span id="active-player-name" class="player-name">Player 1</span>
+                            <span id="active-player-role" class="player-role">HACKER</span>
+                        </div>
+                    </div>
+
+                    <div class="crew-roster-compact">
+                        <div id="player-1-hud" class="player-hud-item">
+                            <span class="player-icon-small">💻</span>
+                            <span class="player-name-small"></span>
+                            <span class="player-score-small">0</span>
+                        </div>
+                        <div id="player-2-hud" class="player-hud-item">
+                            <span class="player-icon-small">🥷</span>
+                            <span class="player-name-small"></span>
+                            <span class="player-score-small">0</span>
+                        </div>
+                        <div id="player-3-hud" class="player-hud-item">
+                            <span class="player-icon-small">💣</span>
+                            <span class="player-name-small"></span>
+                            <span class="player-score-small">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Score -->
+                <div class="team-score-container">
+                    <div class="team-score-label">TEAM SCORE</div>
+                    <div id="team-score" class="team-score-display">0</div>
+                </div>
+
+                <!-- Role Ability Status -->
+                <div class="ability-status-container">
+                    <div class="ability-label">SPECIAL ABILITY</div>
+                    <div id="ability-status" class="ability-status">READY</div>
+                </div>
+            </div>
+
+            <!-- Heist Feed (Messages) -->
+            <div id="heist-feed" class="heist-feed"></div>
+
+            <!-- Large Overlay Message -->
+            <div id="overlay-message" class="overlay-message"></div>
+        </div>
+
+        <!-- SCREEN 5: Mission Complete -->
+        <div id="mission-complete-screen" class="screen-panel" style="display: none;">
+            <div class="result-content">
+                <div class="result-icon success-icon">✓</div>
+                <h2 class="result-title">HEIST SUCCESSFUL!</h2>
+                <p class="result-subtitle">The crew escaped with the loot!</p>
+
+                <div class="result-stats">
+                    <div class="result-stat-box">
+                        <div class="result-stat-label">TIME TAKEN</div>
+                        <div id="result-time" class="result-stat-value">2:45</div>
+                    </div>
+                    <div class="result-stat-box">
+                        <div class="result-stat-label">ALERT LEVEL</div>
+                        <div id="result-alert" class="result-stat-value">35%</div>
+                    </div>
+                    <div class="result-stat-box">
+                        <div class="result-stat-label">TEAM SCORE</div>
+                        <div id="result-score" class="result-stat-value">5000</div>
+                    </div>
+                </div>
+
+                <div class="mvp-section">
+                    <h3>CREW PERFORMANCE</h3>
+                    <div class="crew-performance">
+                        <div class="performance-item">
+                            <span class="performance-icon">💻</span>
+                            <span id="perf-player-1" class="performance-name">Player 1</span>
+                            <span id="perf-score-1" class="performance-score">2000</span>
+                        </div>
+                        <div class="performance-item">
+                            <span class="performance-icon">🥷</span>
+                            <span id="perf-player-2" class="performance-name">Player 2</span>
+                            <span id="perf-score-2" class="performance-score">1500</span>
+                        </div>
+                        <div class="performance-item">
+                            <span class="performance-icon">💣</span>
+                            <span id="perf-player-3" class="performance-name">Player 3</span>
+                            <span id="perf-score-3" class="performance-score">1500</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rewards-section">
+                    <div class="reward-item">
+                        <span class="reward-label">CREW REP EARNED:</span>
+                        <span id="rep-earned" class="reward-value">+500</span>
+                    </div>
+                    <div id="achievement-unlocked" class="achievement-notification" style="display: none;">
+                        <span class="achievement-icon">🏆</span>
+                        <span id="achievement-text" class="achievement-text">MISSION UNLOCKED: Data Breach</span>
+                    </div>
+                </div>
+
+                <div class="result-buttons">
+                    <button id="next-mission-btn" class="btn btn-success btn-large">NEXT MISSION</button>
+                    <button id="replay-mission-btn" class="btn btn-primary">REPLAY</button>
+                    <button id="back-to-base-btn" class="btn btn-secondary">BACK TO BASE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 6: Mission Failed -->
+        <div id="mission-failed-screen" class="screen-panel" style="display: none;">
+            <div class="result-content">
+                <div class="result-icon failure-icon">✗</div>
+                <h2 class="result-title">HEIST FAILED!</h2>
+                <p id="failure-reason" class="result-subtitle">The crew was captured by security!</p>
+
+                <div class="result-stats">
+                    <div class="result-stat-box">
+                        <div class="result-stat-label">TIME SURVIVED</div>
+                        <div id="fail-time" class="result-stat-value">1:23</div>
+                    </div>
+                    <div class="result-stat-box">
+                        <div class="result-stat-label">ALERT LEVEL</div>
+                        <div id="fail-alert" class="result-stat-value">100%</div>
+                    </div>
+                    <div class="result-stat-box">
+                        <div class="result-stat-label">TEAM SCORE</div>
+                        <div id="fail-score" class="result-stat-value">1200</div>
+                    </div>
+                </div>
+
+                <div class="failure-tips">
+                    <h3>TIP FOR NEXT TIME:</h3>
+                    <p id="failure-tip">Work together as a crew! Each role has unique abilities to help complete objectives.</p>
+                </div>
+
+                <div class="result-buttons">
+                    <button id="retry-mission-btn" class="btn btn-success btn-large">TRY AGAIN</button>
+                    <button id="failed-back-to-base-btn" class="btn btn-secondary">BACK TO BASE</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Heist Game Logic -->
+    <script src="/games/heist-crew/heist.js"></script>
+
+    <script>
+        /**
+         * Initialize the game when page loads
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('HEIST CREW: Page loaded, initializing...');
+
+            // Initialize darts connection
+            initializeDartsConnection();
+
+            // Setup game event listeners
+            setupGameControls();
+
+            console.log('HEIST CREW: Initialization complete');
+        });
+
+        /**
+         * Initialize WebSocket connection to darts-caller
+         */
+        function initializeDartsConnection() {
+            DartsClient.init({
+                onConnected: function() {
+                    console.log('HEIST CREW: Connected to server');
+                },
+
+                onDisconnected: function() {
+                    console.log('HEIST CREW: Disconnected from server');
+                    // Pause game if disconnected during play
+                    if (HeistGame.isGameActive()) {
+                        alert('Connection lost! Heist paused.');
+                        HeistGame.pauseGame();
+                    }
+                },
+
+                onDartsStatus: function(connected) {
+                    console.log('HEIST CREW: Darts-caller status:', connected);
+                    // Update UI based on darts-caller status
+                    const assembleBtn = document.getElementById('assemble-crew-btn');
+                    if (assembleBtn && !connected) {
+                        assembleBtn.disabled = true;
+                        assembleBtn.textContent = 'WAITING FOR DARTS-CALLER...';
+                    } else if (assembleBtn && connected) {
+                        assembleBtn.disabled = false;
+                        assembleBtn.textContent = 'ASSEMBLE CREW';
+                    }
+                },
+
+                onDartThrown: function(dart) {
+                    console.log('HEIST CREW: Dart thrown:', dart);
+
+                    // Only process dart if game is active
+                    if (HeistGame.isGameActive()) {
+                        HeistGame.handleDartThrow(dart);
+                    }
+                }
+            });
+        }
+
+        /**
+         * Setup game control button event listeners
+         */
+        function setupGameControls() {
+            // Assemble Crew button
+            const assembleBtn = document.getElementById('assemble-crew-btn');
+            if (assembleBtn) {
+                assembleBtn.addEventListener('click', function() {
+                    const player1 = document.getElementById('player1-name').value.trim();
+                    const player2 = document.getElementById('player2-name').value.trim();
+                    const player3 = document.getElementById('player3-name').value.trim();
+
+                    if (!player1 || !player2 || !player3) {
+                        const errorDiv = document.getElementById('setup-error');
+                        errorDiv.textContent = 'All crew members must enter their names!';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+
+                    // Check for darts-caller connection
+                    const status = DartsClient.getStatus();
+                    if (!status.dartsCallerConnected) {
+                        alert('Please ensure darts-caller is running at https://localhost:8079');
+                        return;
+                    }
+
+                    // Setup crew
+                    HeistGame.setupCrew([player1, player2, player3]);
+                });
+            }
+
+            // Mission select buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('mission-select-btn') && !e.target.disabled) {
+                    const missionCard = e.target.closest('.mission-card');
+                    const missionId = missionCard.dataset.mission;
+                    HeistGame.showMissionBriefing(missionId);
+                }
+            });
+
+            // Start Heist button
+            const startHeistBtn = document.getElementById('start-heist-btn');
+            if (startHeistBtn) {
+                startHeistBtn.addEventListener('click', function() {
+                    HeistGame.startMission();
+                });
+            }
+
+            // Back to missions button
+            const backToMissionsBtn = document.getElementById('back-to-missions-btn');
+            if (backToMissionsBtn) {
+                backToMissionsBtn.addEventListener('click', function() {
+                    HeistGame.showMissionSelect();
+                });
+            }
+
+            // Result screen buttons
+            const nextMissionBtn = document.getElementById('next-mission-btn');
+            if (nextMissionBtn) {
+                nextMissionBtn.addEventListener('click', function() {
+                    HeistGame.showMissionSelect();
+                });
+            }
+
+            const replayBtn = document.getElementById('replay-mission-btn');
+            if (replayBtn) {
+                replayBtn.addEventListener('click', function() {
+                    HeistGame.replayMission();
+                });
+            }
+
+            const backToBaseBtn = document.getElementById('back-to-base-btn');
+            if (backToBaseBtn) {
+                backToBaseBtn.addEventListener('click', function() {
+                    HeistGame.showMissionSelect();
+                });
+            }
+
+            const retryBtn = document.getElementById('retry-mission-btn');
+            if (retryBtn) {
+                retryBtn.addEventListener('click', function() {
+                    HeistGame.replayMission();
+                });
+            }
+
+            const failedBackBtn = document.getElementById('failed-back-to-base-btn');
+            if (failedBackBtn) {
+                failedBackBtn.addEventListener('click', function() {
+                    HeistGame.showMissionSelect();
+                });
+            }
+        }
+    </script>
+</body>
+</html>
