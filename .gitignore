@@ -45,3 +45,6 @@ _archive/
 
 # Third-party repositories (managed separately)
 darts-caller/
+
+# Downloaded prompt examples
+taches-cc-prompts-main/
