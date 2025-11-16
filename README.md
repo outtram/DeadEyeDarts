@@ -1,80 +1,96 @@
-# 🎯 DeadEyeDarts
+# 🎯 DeadEyeDarts & DeadEyeGames
 
-A zombie-themed darts game that connects to your autodarts.io board for real-time dart tracking!
-
-## What is this?
-
-DeadEyeDarts is a custom game client that listens to your autodarts.io dartboard and displays individual dart throws with zombie hit detection. Hit numbers 11-20 to defeat zombies, with bonus damage for doubles and triples!
+Retro cyberpunk dart gaming platform that connects to your autodarts.io board!
 
 ## Quick Start
 
-### First Time Setup
-Read **[SETUP_FIRST_TIME.md](SETUP_FIRST_TIME.md)** for detailed installation instructions.
+**Already installed?** → Read **[HOWTOSTART.md](HOWTOSTART.md)** (2 simple commands!)
 
-### Daily Use
-Read **[QUICK_START.md](QUICK_START.md)** for quick startup instructions.
+**First time setup?** → Read **[INSTALL_FOR_FRIENDS.md](INSTALL_FOR_FRIENDS.md)** (complete guide!)
+
+## What's in this repository?
+
+### DeadEyeGames (Main Project) 🎮
+Web-based retro cyberpunk gaming platform with multiple dart games:
+- **Zombie Slayer** - Kill zombies by hitting their numbers
+- **HEIST CREW** - 3-player cooperative heist missions
+
+📁 Location: `DeadEyeGames/`
+📖 Docs: See `DeadEyeGames/START_HERE.md`
+
+### DeadEyeDarts (Legacy) 🧟
+Original Python CLI zombie game (archived but still functional)
+
+📁 Location: `DeadEyeDarts/`
+📖 Archived docs: See `_archive/` folder
 
 ## Project Structure
 
 ```
 CODE/
-├── DeadEyeDarts/              # YOUR zombie darts game!
-│   └── deadeyedarts_client.py # Main game logic
-├── darts-caller/              # Third-party autodarts connector
+├── HOWTOSTART.md              # ⭐ START HERE - Quick startup guide
 ├── start_darts.sh             # Start darts-caller server
-├── run_deadeyedarts.sh        # Start YOUR game
-├── SETUP_FIRST_TIME.md        # First-time setup guide
-└── QUICK_START.md             # Daily usage guide
+├── DeadEyeGames/              # 🎮 Main web-based gaming platform
+│   ├── START_HERE.md          # Navigation guide
+│   ├── run_games.sh           # Start the games server
+│   ├── server.py              # Flask server
+│   └── games/                 # Individual game folders
+│       ├── zombie-slayer/
+│       └── heist-crew/
+├── DeadEyeDarts/              # 🧟 Legacy Python CLI game
+│   └── deadeyedarts_client.py
+├── darts-caller/              # Third-party autodarts connector
+└── _archive/                  # Old documentation (archived)
 ```
 
 ## Features
 
-- ✅ Real-time individual dart tracking
-- ✅ Works with X01 games (501, 301, etc.)
-- ✅ Zombie target detection (numbers 11-20)
-- ✅ Bonus damage for doubles and triples
-- ✅ Easy to extend with your own game logic
+- ✅ Real-time dart tracking with autodarts.io
+- ✅ Retro 90's cyberpunk aesthetic
+- ✅ Multiple game modes (solo and multiplayer)
+- ✅ Web-based interface - play in your browser
+- ✅ Modular architecture - easy to add new games
 
 ## Requirements
 
-- Python 3.x
+- Python 3.7+
 - autodarts.io account (with 2FA disabled)
 - autodarts board OR manual entry at play.autodarts.io
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 - **darts-caller** (clone separately): `git clone https://github.com/lbormann/darts-caller.git`
 
 ## How It Works
 
 1. **darts-caller** connects to autodarts.io and broadcasts dart events
-2. **DeadEyeDarts** listens to these events via Socket.IO
-3. Each dart throw is processed and displayed with zombie game logic
+2. **DeadEyeGames server** listens to these events via Socket.IO
+3. **Web browser** connects to the game server
+4. Each dart throw is processed in real-time and displayed in the browser
 
-## Game Rules (Current)
+## Current Games
 
-- **Zombie Targets:** Numbers 11-20
-- **Single hit:** Normal damage 💀
-- **Double hit:** Extra damage ⚡⚡
-- **Triple hit:** BONUS damage ⚡⚡⚡
-- **Miss:** Any number outside 11-20
+### Zombie Slayer 🧟
+- Kill zombies by hitting their assigned numbers
+- Miss 3 times = game over
+- Bonus points for doubles and triples
 
-## Customization
+### HEIST CREW 🎯
+- 3-player cooperative heist missions
+- Choose your role: Hacker, Infiltrator, or Demolitions
+- Complete 5 story-driven missions
+- Time pressure and alert level mechanics
 
-Edit `DeadEyeDarts/deadeyedarts_client.py` to customize:
-- Zombie target numbers
-- Damage calculations
-- Game logic and scoring
-- Visual output
+## Documentation
+
+- **Quick Start:** [HOWTOSTART.md](HOWTOSTART.md) - Get playing in 2 commands
+- **DeadEyeGames:** [DeadEyeGames/START_HERE.md](DeadEyeGames/START_HERE.md) - Full game platform docs
+- **Archived Docs:** [_archive/](_archive/) - Legacy setup guides
 
 ## Credits
 
 - **darts-caller** by lbormann: https://github.com/lbormann/darts-caller
 - **autodarts.io**: https://autodarts.io
-
-## License
-
-DeadEyeDarts game client: Your code, your rules!
-
-darts-caller: See darts-caller/README.md for license info
+- Built with Flask, Socket.IO, and vanilla JavaScript
 
 ---
 
-Made with ❤️ for zombie dart slaying! 🧟‍♂️🎯
+Made with ❤️ for dart gaming! 🎯✨

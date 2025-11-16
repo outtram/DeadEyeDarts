@@ -1,23 +1,286 @@
-# DeadEyeDarts - Installation Guide for Friends
+# DeadEyeGames - Installation Guide for Friends
 
-Hey! Troy wants you to try his zombie darts game. Here's how to get it running on your computer.
+Hey! Troy wants you to try his retro cyberpunk dart games. Here's how to get everything running on your computer.
 
 ---
 
 ## What You'll Need
 
-1. **Python 3** installed on your computer
+1. **Python 3.7+** installed on your computer
 2. **An autodarts.io account** with:
    - Your email address
    - Your password (**disable 2FA!**)
    - Your Board ID (from autodarts.io Board Manager)
 3. **A physical autodarts board** OR you can use manual entry at play.autodarts.io
+4. **Git** installed (for cloning the repository)
 
 ---
 
-## Installation Steps
+## Step-by-Step Installation
 
-### Step 1: Install Python (if you don't have it)
+### Step 1: Install Prerequisites
+
+#### Python Installation
+
+**Mac:**
+```bash
+# Check if you have Python 3.7+
+python3 --version
+
+# If not, install via Homebrew (recommended)
+brew install python3
+
+# OR download from https://www.python.org/downloads/
+```
+
+**Windows:**
+1. Download Python from https://www.python.org/downloads/
+2. **IMPORTANT:** Check "Add Python to PATH" during installation!
+3. Verify installation:
+   ```cmd
+   python --version
+   ```
+
+#### Git Installation
+
+**Mac:**
+```bash
+# Check if you have git
+git --version
+
+# If not, install via Homebrew
+brew install git
+```
+
+**Windows:**
+Download from https://git-scm.com/download/win
+
+---
+
+### Step 2: Clone the Repository
+
+Open Terminal (Mac) or Command Prompt (Windows):
+
+```bash
+# Navigate to where you want to install (e.g., your home directory)
+cd ~
+
+# Clone Troy's game repository
+git clone https://github.com/outtram/DeadEyeDarts.git
+
+# This creates a folder called "DeadEyeDarts" - let's rename it to CODE
+mv DeadEyeDarts CODE
+
+# Navigate into the folder
+cd CODE
+
+# Clone the required darts-caller software (third-party)
+git clone https://github.com/lbormann/darts-caller.git
+```
+
+**Windows users:** If `mv` doesn't work, use:
+```cmd
+rename DeadEyeDarts CODE
+```
+
+---
+
+### Step 3: Configure Your Autodarts Credentials
+
+You need to edit `start_darts.sh` with YOUR autodarts.io credentials.
+
+**Mac:**
+```bash
+cd ~/CODE
+nano start_darts.sh
+```
+
+**Windows:**
+```cmd
+cd C:\Users\YourUsername\CODE
+notepad start_darts.sh
+```
+
+**Find these lines (around line 115):**
+```bash
+-U "your-email@example.com" \
+-P "your-password" \
+-B "your-board-id" \
+```
+
+**Replace with:**
+- `-U` = Your autodarts.io email
+- `-P` = Your autodarts.io password (**make sure 2FA is disabled!**)
+- `-B` = Your board ID (find it in autodarts.io Board Manager)
+
+**Example:**
+```bash
+-U "john@example.com" \
+-P "MyPassword123" \
+-B "9ee38305-e258-4e20-af39-f66fb477de46" \
+```
+
+**Save the file:**
+- Mac (nano): Press `Ctrl+O`, then `Enter`, then `Ctrl+X`
+- Windows (notepad): Click File → Save
+
+---
+
+### Step 4: Make Scripts Executable (Mac/Linux only)
+
+```bash
+cd ~/CODE
+chmod +x start_darts.sh
+cd DeadEyeGames
+chmod +x run_games.sh
+```
+
+**Windows users:** Skip this step!
+
+---
+
+### Step 5: First Run (Automatic Setup!)
+
+Great news! The virtual environment system means **NO manual installation needed!**
+
+The scripts will automatically:
+- ✅ Create isolated virtual environments
+- ✅ Install all Python dependencies
+- ✅ Download voice packs (for darts-caller)
+- ✅ Configure everything properly
+
+You need **TWO terminal windows open**:
+
+#### Terminal 1: Start darts-caller
+
+**Mac:**
+```bash
+cd ~/CODE
+./start_darts.sh
+```
+
+**Windows:**
+```bash
+cd C:\Users\YourUsername\CODE
+bash start_darts.sh
+```
+
+**First run will:**
+- Create virtual environment (`darts-venv/`) - takes 2-3 minutes
+- Install dependencies automatically
+- Download voice packs
+- Connect to autodarts.io
+
+**Wait for:** "CURRENT VOICE-PACK: en-us-sage-female" message
+
+**Keep this terminal running!**
+
+---
+
+#### Terminal 2: Start DeadEyeGames
+
+**Mac:**
+```bash
+cd ~/CODE/DeadEyeGames
+./run_games.sh
+```
+
+**Windows:**
+```bash
+cd C:\Users\YourUsername\CODE\DeadEyeGames
+bash run_games.sh
+```
+
+**First run will:**
+- Create virtual environment (`venv/`) - takes 30 seconds
+- Install Flask, Socket.IO, and other dependencies
+- Start the web server
+- Open your browser automatically
+
+**Wait for:** Browser opens to http://localhost:5000
+
+**Keep this terminal running too!**
+
+---
+
+### Step 6: Play!
+
+1. Your browser should automatically open to http://localhost:5000
+2. Wait for green "Connected" status indicator at the top
+3. Click on a game:
+   - **Zombie Slayer** - Solo zombie killing game
+   - **HEIST CREW** - 3-player cooperative heist missions
+4. Start playing!
+
+---
+
+## Virtual Environments Explained
+
+### What are virtual environments?
+
+Think of them as isolated "bubbles" for Python packages. Each project gets its own bubble with its own versions of everything.
+
+### Why is this awesome?
+
+- ✅ **No conflicts:** Different projects can use different package versions
+- ✅ **Clean system:** Your main Python installation stays clean
+- ✅ **Works everywhere:** Same setup on every computer
+- ✅ **No manual install:** Scripts handle everything automatically
+- ✅ **Repeatable:** Delete and recreate anytime
+
+### How does it work in this project?
+
+```
+CODE/
+├── start_darts.sh         # Creates darts-venv/ on first run
+├── darts-venv/            # Virtual environment for darts-caller
+│   └── (Flask, SocketIO, etc.)
+└── DeadEyeGames/
+    ├── run_games.sh       # Creates venv/ on first run
+    └── venv/              # Virtual environment for DeadEyeGames
+        └── (Flask, SocketIO, etc.)
+```
+
+**On first run:** Takes 2-3 minutes to set up everything
+**Every run after:** Starts in seconds!
+
+### Do I need to install anything manually?
+
+**NO!** The scripts detect if virtual environments exist and:
+1. Create them if missing
+2. Activate them
+3. Install dependencies if needed
+4. Run the application
+
+You never touch `pip install` or `requirements.txt` manually!
+
+---
+
+## Subsequent Runs (After First Time)
+
+Once everything is set up, starting the games is super quick:
+
+**Terminal 1:**
+```bash
+cd ~/CODE
+./start_darts.sh
+```
+(Starts in ~5 seconds)
+
+**Terminal 2:**
+```bash
+cd ~/CODE/DeadEyeGames
+./run_games.sh
+```
+(Starts in ~3 seconds)
+
+**Total time to gameplay:** ~10 seconds! 🚀
+
+---
+
+## Troubleshooting
+
+### "Python not found"
 
 **Mac:**
 ```bash
@@ -25,196 +288,174 @@ brew install python3
 ```
 
 **Windows:**
-Download from https://www.python.org/ (check "Add Python to PATH" during install)
-
-**Linux:**
-```bash
-sudo apt-get update
-sudo apt-get install python3 python3-pip
-```
+Reinstall Python from python.org and **check "Add Python to PATH"**
 
 ---
 
-### Step 2: Download the Code
+### "git command not found"
 
-Open Terminal (Mac/Linux) or Command Prompt (Windows) and run:
-
+**Mac:**
 ```bash
-# Navigate to where you want to install it
-cd ~/Desktop
-
-# Clone Troy's game
-git clone https://github.com/outtram/DeadEyeDarts.git
-
-# Clone the required darts-caller software
-git clone https://github.com/lbormann/darts-caller.git
-
-# Move into the directory
-cd DeadEyeDarts
-```
-
----
-
-### Step 3: ~~Install Dependencies~~ SKIP THIS STEP!
-
-**Good news!** Both scripts now automatically create virtual environments and install dependencies on first run. You don't need to do anything manually!
-
-The scripts will:
-- Create isolated virtual environments (no conflicts!)
-- Install the correct package versions automatically
-- Take care of everything for you
-
-Just skip to Step 4!
-
----
-
-### Step 4: Configure Your Autodarts Credentials
-
-You need to edit the `start_darts.sh` file with YOUR autodarts info.
-
-**Mac/Linux:**
-```bash
-nano start_darts.sh
+brew install git
 ```
 
 **Windows:**
-Open `start_darts.sh` in Notepad or your favorite text editor.
-
-**Find these lines and update them:**
-```bash
--U "your-email@example.com" \
--P "your-password" \
--B "your-board-id" \
-```
-
-Replace with:
-- Your autodarts.io email
-- Your autodarts.io password (**make sure 2FA is disabled!**)
-- Your board ID (find it at autodarts.io in Board Manager)
-
-**Save the file!**
+Download and install from https://git-scm.com/download/win
 
 ---
 
-### Step 5: Make Scripts Executable (Mac/Linux only)
+### "Permission denied" (Mac only)
 
 ```bash
 chmod +x start_darts.sh
-chmod +x run_deadeyedarts.sh
+cd DeadEyeGames
+chmod +x run_games.sh
 ```
 
 ---
 
-### Step 6: Run the Game!
+### "Connection Error" or "Disconnected" status
 
-You need **TWO terminal windows open**:
+1. Make sure Terminal 1 (darts-caller) is running first
+2. Check your autodarts credentials in `start_darts.sh`
+3. Verify 2FA is disabled on your autodarts.io account
 
-**Terminal 1: Start darts-caller**
+---
+
+### "Port already in use"
+
+**Mac:**
 ```bash
-cd ~/Desktop/DeadEyeDarts
-./start_darts.sh
+# Kill process on port 5000 (DeadEyeGames)
+lsof -ti:5000 | xargs kill
+
+# Kill process on port 8079 (darts-caller)
+lsof -ti:8079 | xargs kill
 ```
 
-**First run will:**
-- Create a virtual environment (`darts-venv/`)
-- Install all dependencies automatically (2-3 minutes)
-- Download voice packs
-
-Wait for: "CURRENT VOICE-PACK: ..." message
-**Keep this running!**
+**Windows:**
+```cmd
+netstat -ano | findstr :5000
+taskkill /PID [PID_NUMBER] /F
+```
 
 ---
 
-**Terminal 2: Start DeadEyeDarts**
+### Virtual environment issues
+
+If something goes wrong, just delete and recreate:
+
+**Mac/Linux:**
 ```bash
-cd ~/Desktop/DeadEyeDarts
-bash run_deadeyedarts.sh
+rm -rf ~/CODE/darts-venv
+rm -rf ~/CODE/DeadEyeGames/venv
+# Run the scripts again - they'll recreate everything
 ```
 
-**First run will:**
-- Create a virtual environment (`deadeyedarts-venv/`)
-- Install dependencies automatically (30 seconds)
-
-Wait for: "🎯 DeadEyeDarts Connected to darts-caller!"
-**Keep this running!**
-
-**Note:** After the first run, both scripts start in just a few seconds!
+**Windows:**
+```cmd
+rmdir /s C:\Users\YourUsername\CODE\darts-venv
+rmdir /s C:\Users\YourUsername\CODE\DeadEyeGames\venv
+```
 
 ---
 
-### Step 7: Play!
+### Browser doesn't open automatically
 
-1. Go to **https://play.autodarts.io/**
-2. Start a game in **X01 mode** (501 or 301)
-3. Throw darts at your board OR click manually on the web dartboard
-4. Watch **Terminal 2** for your dart hits and zombie kills!
+Manually navigate to: http://localhost:5000
 
 ---
 
-## Game Rules
+### Darts not detected in the game
 
-- **Zombie Targets:** Numbers 11-20
-- **Single hit:** Normal damage 💀
-- **Double hit:** Extra damage ⚡⚡
-- **Triple hit:** BONUS damage ⚡⚡⚡
-- **Miss:** Any other number
-
----
-
-## Troubleshooting
-
-### "Python not found"
-- Make sure Python 3 is installed: `python3 --version`
-
-### "Connection Error"
-- Make sure Terminal 1 (darts-caller) is running first
-- Check your autodarts credentials in `start_darts.sh`
-
-### "No dart events showing"
-- Make sure you're playing **X01 mode** (not CountUp)
-- Both terminal windows must be running
-
-### SSL/HTTPS warnings
-- These are normal! Ignore them, the game will still work
-
-### "Can't find darts-caller"
-- Make sure you cloned both repositories:
-  - `git clone https://github.com/outtram/DeadEyeDarts.git`
-  - `git clone https://github.com/lbormann/darts-caller.git`
+1. Make sure you're playing on autodarts.io (or throwing at your physical board)
+2. Check that both terminals are running
+3. Verify green "Connected" status in the browser
+4. Check browser console for errors (press F12 → Console tab)
 
 ---
 
 ## Directory Structure After Install
 
 ```
-Desktop/
-├── DeadEyeDarts/              # Troy's zombie game
-│   ├── DeadEyeDarts/          # Game code
-│   ├── darts-venv/            # Virtual environment (auto-created)
-│   ├── deadeyedarts-venv/     # Virtual environment (auto-created)
-│   ├── darts-media/           # Voice packs (auto-downloaded)
-│   ├── start_darts.sh         # Start darts-caller
-│   └── run_deadeyedarts.sh    # Start the game
-└── darts-caller/              # Required server software
+CODE/
+├── start_darts.sh             # Start darts-caller (Terminal 1)
+├── darts-venv/                # Virtual env (auto-created)
+├── darts-caller/              # Third-party autodarts connector
+├── darts-media/               # Voice packs (auto-downloaded)
+├── DeadEyeGames/              # Main game platform
+│   ├── run_games.sh           # Start games server (Terminal 2)
+│   ├── venv/                  # Virtual env (auto-created)
+│   ├── server.py              # Flask server
+│   └── games/                 # Game folders
+│       ├── zombie-slayer/
+│       └── heist-crew/
+└── DeadEyeDarts/              # Legacy Python CLI game
 ```
 
-**Note:** The `*-venv/` folders are created automatically and keep Python packages isolated - no conflicts!
+**Note:** `*-venv/` folders are created automatically and are NOT in git!
 
 ---
 
-## Stopping the Game
+## Updating the Games
 
-Press **Ctrl+C** in both terminal windows.
+When Troy pushes updates:
 
----
+```bash
+cd ~/CODE
+git pull
+```
 
-## Questions?
-
-Ask Troy! Or check the full docs:
-- `SETUP_FIRST_TIME.md` - Detailed setup
-- `QUICK_START.md` - Quick reference
-- `README.md` - Project overview
+Then restart both terminals - the scripts will update dependencies if needed!
 
 ---
 
-Have fun slaying zombies with darts! 🎯🧟‍♂️
+## Stopping the Games
+
+Press `Ctrl+C` in **both terminal windows**.
+
+---
+
+## Game Rules Quick Reference
+
+### Zombie Slayer 🧟
+- Kill zombies by hitting their target numbers
+- Miss 3 times = Game Over
+- Singles: 100 points, Doubles: 200 points, Triples: 300 points
+
+### HEIST CREW 🎯
+- 3-player cooperative missions
+- Choose role: Hacker, Infiltrator, or Demolitions
+- Complete 5 story-driven heist missions
+- Manage time and alert levels
+
+---
+
+## Need More Help?
+
+- **Quick startup:** See `HOWTOSTART.md` in the CODE folder
+- **DeadEyeGames docs:** See `DeadEyeGames/START_HERE.md`
+- **Main README:** See `README.md` in CODE folder
+
+Ask Troy if you get stuck!
+
+---
+
+## Summary for the Impatient
+
+1. Install Python 3.7+ and Git
+2. Clone repo: `git clone https://github.com/outtram/DeadEyeDarts.git`
+3. Rename to CODE: `mv DeadEyeDarts CODE`
+4. Clone darts-caller: `cd CODE && git clone https://github.com/lbormann/darts-caller.git`
+5. Edit `start_darts.sh` with your autodarts credentials
+6. Make scripts executable (Mac): `chmod +x start_darts.sh DeadEyeGames/run_games.sh`
+7. Terminal 1: `./start_darts.sh`
+8. Terminal 2: `cd DeadEyeGames && ./run_games.sh`
+9. Play at http://localhost:5000
+
+**First time:** Takes ~5 minutes (automatic setup)
+**Every time after:** Takes ~10 seconds!
+
+---
+
+Have fun playing! 🎯🧟✨
