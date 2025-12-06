@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dad Bod Olympics - DeadEyeGames</title>
+
+    <link rel="stylesheet" href="/static/css/cyberpunk.css">
+    <link rel="stylesheet" href="/games/dad-bod-olympics/dad-bod.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/static/js/darts-client.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <div class="game-header">
+            <a href="/" class="btn btn-secondary back-btn">← Back</a>
+            <div class="header-title">
+                <h1>DAD BOD OLYMPICS</h1>
+                <p class="subtitle">The Ultimate Middle-Aged Showdown</p>
+            </div>
+            <div id="connection-status" class="status-indicator disconnected">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- Setup Screen -->
+        <div id="setup-screen" class="screen active">
+            <div class="setup-panel">
+                <h2>Enter Your Names, Legends</h2>
+                <p class="setup-hint">5 players required. No fake names, your mates will know.</p>
+
+                <div class="player-inputs">
+                    <div class="player-input-row">
+                        <span class="player-number">1</span>
+                        <input type="text" id="player1" placeholder="First Dad" maxlength="15">
+                    </div>
+                    <div class="player-input-row">
+                        <span class="player-number">2</span>
+                        <input type="text" id="player2" placeholder="Second Dad" maxlength="15">
+                    </div>
+                    <div class="player-input-row">
+                        <span class="player-number">3</span>
+                        <input type="text" id="player3" placeholder="Third Dad" maxlength="15">
+                    </div>
+                    <div class="player-input-row">
+                        <span class="player-number">4</span>
+                        <input type="text" id="player4" placeholder="Fourth Dad" maxlength="15">
+                    </div>
+                    <div class="player-input-row">
+                        <span class="player-number">5</span>
+                        <input type="text" id="player5" placeholder="Fifth Dad" maxlength="15">
+                    </div>
+                </div>
+
+                <button id="start-game-btn" class="btn btn-primary btn-large">
+                    LET THE GAMES BEGIN
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <!-- Round Info -->
+            <div class="round-header">
+                <div class="round-info">
+                    <span class="round-label">EVENT</span>
+                    <span id="round-number" class="round-number">1</span>
+                    <span class="round-total">/ 5</span>
+                </div>
+                <div id="event-name" class="event-name">THE RECLINER RUSH</div>
+            </div>
+
+            <!-- Event Description -->
+            <div id="event-description" class="event-description">
+                <p id="event-text"></p>
+                <div id="event-target" class="event-target"></div>
+            </div>
+
+            <!-- Current Thrower -->
+            <div id="current-thrower" class="current-thrower">
+                <span class="thrower-label">NOW THROWING:</span>
+                <span id="thrower-name" class="thrower-name">Player 1</span>
+                <span id="throw-count" class="throw-count">(Dart 1 of 3)</span>
+            </div>
+
+            <!-- Scoreboard -->
+            <div id="scoreboard" class="scoreboard">
+                <!-- Player scores populated by JS -->
+            </div>
+
+            <!-- Game Message -->
+            <div id="game-message" class="game-message"></div>
+
+            <!-- Round Results -->
+            <div id="round-results" class="round-results">
+                <h3>EVENT RESULTS</h3>
+                <div id="results-list" class="results-list"></div>
+                <button id="next-round-btn" class="btn btn-primary">NEXT EVENT</button>
+            </div>
+        </div>
+
+        <!-- Final Results Screen -->
+        <div id="final-screen" class="screen">
+            <div class="final-panel">
+                <h2>THE OLYMPICS ARE OVER!</h2>
+
+                <div id="winner-podium" class="winner-podium">
+                    <!-- Podium populated by JS -->
+                </div>
+
+                <div id="final-standings" class="final-standings">
+                    <!-- All standings populated by JS -->
+                </div>
+
+                <div id="awards-section" class="awards-section">
+                    <h3>SPECIAL AWARDS</h3>
+                    <div id="special-awards"></div>
+                </div>
+
+                <button id="play-again-btn" class="btn btn-primary btn-large">
+                    REMATCH!
+                </button>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div id="instructions" class="instructions-panel">
+            <h3>HOW TO PLAY</h3>
+            <ul>
+                <li><strong>5 Players</strong> - Enter everyone's name to begin</li>
+                <li><strong>5 Events</strong> - Each themed around the joys of being 48</li>
+                <li><strong>3 Darts Each</strong> - Per event, score based on the challenge</li>
+                <li><strong>Medals</strong> - Gold (3pts), Silver (2pts), Bronze (1pt)</li>
+                <li><strong>Winner</strong> - Most points after all events!</li>
+            </ul>
+            <div class="events-preview">
+                <h4>THE EVENTS:</h4>
+                <div class="event-list">
+                    <span>1. The Recliner Rush</span>
+                    <span>2. Lawn Mower Grand Prix</span>
+                    <span>3. BBQ Master Chef</span>
+                    <span>4. The Dad Joke Delivery</span>
+                    <span>5. Remote Control Rage</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/games/dad-bod-olympics/dad-bod.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            DartsClient.init({
+                onDartThrown: (dart) => {
+                    if (DadBodOlympics.isGameActive()) {
+                        DadBodOlympics.handleDartThrow(dart);
+                    }
+                },
+                onDartsStatus: (connected) => {
+                    const startBtn = document.getElementById('start-game-btn');
+                    if (startBtn) {
+                        startBtn.disabled = !connected;
+                        if (!connected) {
+                            startBtn.textContent = 'WAITING FOR DARTS CONNECTION...';
+                        } else {
+                            startBtn.textContent = 'LET THE GAMES BEGIN';
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('start-game-btn')?.addEventListener('click', () => {
+                DadBodOlympics.startGame();
+            });
+
+            document.getElementById('next-round-btn')?.addEventListener('click', () => {
+                DadBodOlympics.nextRound();
+            });
+
+            document.getElementById('play-again-btn')?.addEventListener('click', () => {
+                DadBodOlympics.resetGame();
+            });
+        });
+    </script>
+</body>
+</html>

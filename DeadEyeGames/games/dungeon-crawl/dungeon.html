@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dungeon of Darts - DeadEyeGames</title>
+
+    <link rel="stylesheet" href="/static/css/cyberpunk.css">
+    <link rel="stylesheet" href="/games/dungeon-crawl/dungeon.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/static/js/darts-client.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <div class="game-header">
+            <a href="/" class="btn btn-secondary back-btn">← Flee</a>
+            <div class="header-title">
+                <h1>DUNGEON OF DARTS</h1>
+                <p class="subtitle">Five Heroes. One Dungeon. Endless Glory.</p>
+            </div>
+            <div id="connection-status" class="status-indicator disconnected">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- Title Screen -->
+        <div id="title-screen" class="screen active">
+            <div class="title-panel">
+                <div class="title-art">
+                    <pre class="dungeon-ascii">
+    _______________
+   /               \
+  /  DUNGEON OF    \
+ /    D A R T S     \
+|   _______________  |
+|  |  ╔═══════╗   |  |
+|  |  ║ ⚔ 🎯 ⚔ ║   |  |
+|  |  ╚═══════╝   |  |
+|  |_______________|  |
+|_____________________|
+   ||             ||
+   ||  THE FIVE   ||
+   ||   LEGENDS   ||
+   ||_____________||
+                    </pre>
+                </div>
+
+                <h2>The Heroes Assemble</h2>
+                <p class="story-text">
+                    Five legendary warriors have gathered at the entrance of the
+                    <span class="highlight">Dungeon of Darts</span>. Dark creatures lurk within,
+                    guarding treasures beyond imagination. Only the most accurate throwers
+                    will survive...
+                </p>
+
+                <div class="hero-roster">
+                    <div class="hero-card" data-hero="troy">
+                        <div class="hero-icon">⚔️</div>
+                        <div class="hero-name">TROY</div>
+                        <div class="hero-class">The Blade Master</div>
+                    </div>
+                    <div class="hero-card" data-hero="deano">
+                        <div class="hero-icon">🛡️</div>
+                        <div class="hero-name">DEANO</div>
+                        <div class="hero-class">The Tank</div>
+                    </div>
+                    <div class="hero-card" data-hero="dave">
+                        <div class="hero-icon">🔥</div>
+                        <div class="hero-name">DAVE</div>
+                        <div class="hero-class">The Fire Mage</div>
+                    </div>
+                    <div class="hero-card" data-hero="jack">
+                        <div class="hero-icon">🏹</div>
+                        <div class="hero-name">JACK</div>
+                        <div class="hero-class">The Ranger</div>
+                    </div>
+                    <div class="hero-card" data-hero="mick">
+                        <div class="hero-icon">⚡</div>
+                        <div class="hero-name">MICK</div>
+                        <div class="hero-class">The Storm Caller</div>
+                    </div>
+                </div>
+
+                <button id="start-game-btn" class="btn btn-primary btn-large">
+                    ENTER THE DUNGEON
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <!-- Dungeon Level Info -->
+            <div class="dungeon-info">
+                <div class="level-indicator">
+                    <span class="level-label">FLOOR</span>
+                    <span id="current-floor" class="level-number">1</span>
+                </div>
+                <div class="room-indicator">
+                    <span class="room-label">ROOM</span>
+                    <span id="current-room" class="room-number">1</span>
+                    <span class="room-total">/ 5</span>
+                </div>
+                <div class="party-gold">
+                    <span class="gold-icon">💰</span>
+                    <span id="party-gold">0</span>
+                </div>
+            </div>
+
+            <!-- Dungeon View -->
+            <div class="dungeon-view">
+                <!-- The Dungeon Room -->
+                <div id="dungeon-room" class="dungeon-room">
+                    <div class="room-background">
+                        <div class="torch left"></div>
+                        <div class="torch right"></div>
+                        <div class="stone-wall"></div>
+                    </div>
+
+                    <!-- Monster Display Area -->
+                    <div id="monster-arena" class="monster-arena">
+                        <!-- Monster spawns here -->
+                    </div>
+
+                    <!-- Combat Target Indicator -->
+                    <div id="target-indicator" class="target-indicator">
+                        <span class="target-label">HIT</span>
+                        <span id="target-number" class="target-number">20</span>
+                        <span class="target-hint">to deal damage!</span>
+                    </div>
+                </div>
+
+                <!-- Combat Log -->
+                <div id="combat-log" class="combat-log">
+                    <div class="log-header">BATTLE LOG</div>
+                    <div id="log-entries" class="log-entries">
+                        <!-- Log entries appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Party Status -->
+            <div id="party-status" class="party-status">
+                <!-- Hero cards populated by JS -->
+            </div>
+
+            <!-- Current Attacker & Spell Panel -->
+            <div class="attacker-spell-row">
+                <div id="current-attacker" class="current-attacker">
+                    <span class="attacker-label">NOW ATTACKING:</span>
+                    <span id="attacker-name" class="attacker-name">TROY</span>
+                    <span id="attacker-class" class="attacker-class">The Blade Master</span>
+                </div>
+
+                <!-- Spell Panel -->
+                <div id="spell-panel" class="spell-panel">
+                    <!-- Current hero's spell info -->
+                </div>
+            </div>
+
+            <!-- Active Buffs Display -->
+            <div id="buff-display" class="buff-display">
+                <!-- Active power-up buffs shown here -->
+            </div>
+
+            <!-- Floating Damage Numbers -->
+            <div id="damage-container" class="damage-container"></div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="screen">
+            <div class="victory-panel">
+                <h2 class="victory-title">DUNGEON CONQUERED!</h2>
+                <div class="victory-art">🏆⚔️🎯⚔️🏆</div>
+
+                <div id="victory-stats" class="victory-stats">
+                    <!-- Stats populated by JS -->
+                </div>
+
+                <div id="hero-scores" class="hero-scores">
+                    <!-- Individual hero scores -->
+                </div>
+
+                <div id="mvp-section" class="mvp-section">
+                    <!-- MVP award -->
+                </div>
+
+                <button id="play-again-btn" class="btn btn-primary btn-large">
+                    ENTER AGAIN
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen">
+            <div class="gameover-panel">
+                <h2 class="gameover-title">THE PARTY HAS FALLEN!</h2>
+                <div class="gameover-art">💀☠️💀</div>
+
+                <p class="gameover-text">
+                    The dungeon claims another group of adventurers...
+                </p>
+
+                <div id="gameover-stats" class="gameover-stats">
+                    <!-- Stats populated by JS -->
+                </div>
+
+                <button id="retry-btn" class="btn btn-primary btn-large">
+                    TRY AGAIN
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/games/dungeon-crawl/dungeon.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            DartsClient.init({
+                onDartThrown: (dart) => {
+                    if (DungeonCrawl.isGameActive()) {
+                        DungeonCrawl.handleDartThrow(dart);
+                    }
+                },
+                onDartsStatus: (connected) => {
+                    const startBtn = document.getElementById('start-game-btn');
+                    if (startBtn) {
+                        startBtn.disabled = !connected;
+                        if (!connected) {
+                            startBtn.textContent = 'AWAITING CONNECTION...';
+                        } else {
+                            startBtn.textContent = 'ENTER THE DUNGEON';
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('start-game-btn')?.addEventListener('click', () => {
+                DungeonCrawl.startGame();
+            });
+
+            document.getElementById('play-again-btn')?.addEventListener('click', () => {
+                DungeonCrawl.resetGame();
+            });
+
+            document.getElementById('retry-btn')?.addEventListener('click', () => {
+                DungeonCrawl.resetGame();
+            });
+        });
+    </script>
+</body>
+</html>

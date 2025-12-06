@@ -4,7 +4,12 @@ Retro cyberpunk dart gaming platform that connects to your autodarts.io board!
 
 ## Quick Start
 
-**Already installed?** → Read **[HOWTOSTART.md](HOWTOSTART.md)** (2 simple commands!)
+**Open two terminal windows and run:**
+
+1. **Terminal 1:** `./start_darts.sh` (connects to autodarts)
+2. **Terminal 2:** `cd DeadEyeGames && ./run_games.sh` (starts game website)
+
+The browser will open automatically to http://localhost:5001
 
 **First time setup?** → Read **[INSTALL_FOR_FRIENDS.md](INSTALL_FOR_FRIENDS.md)** (complete guide!)
 

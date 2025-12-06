@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-DeadEyeGames Server - Flask web server that bridges darts-caller to web games
-Connects to darts-caller WebSocket and forwards dart events to browser clients
+DeadEyeGames Server - Flask web server that bridges autodarts.io to web games
+Connects to autodarts.io WebSocket and forwards dart events to browser clients
 """
 from flask import Flask, render_template, send_from_directory
 from flask_socketio import SocketIO, emit
@@ -10,6 +10,7 @@ import json
 import threading
 import logging
 import os
+import websocket
 
 # Flask app configuration
 app = Flask(__name__)
@@ -19,7 +20,8 @@ app.config['SECRET_KEY'] = 'deadeye-games-secret'
 web_socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Socket.IO client for darts-caller connection
-darts_client = socketio.Client(ssl_verify=False)  # Disable SSL verification for self-signed cert
+# Use engineio_version=4 to match darts-caller's Socket.IO v4 protocol
+darts_client = socketio.Client(ssl_verify=False, engineio_logger=False)  # Disable SSL verification for self-signed cert
 
 # Connection status
 darts_connected = False
@@ -39,6 +41,11 @@ def connect():
     global darts_connected
     darts_connected = True
     logger.info("✓ Connected to darts-caller at https://localhost:8079")
+
+    # Try sending a message to darts-caller to register/subscribe
+    logger.info("Attempting to subscribe to dart events...")
+    darts_client.emit('message', {'event': 'subscribe', 'client': 'DeadEyeGames'})
+
     # Notify all web clients about connection status
     web_socketio.emit('darts_status', {'connected': True})
 
@@ -67,12 +74,20 @@ def on_darts_message(data):
     Listens for dart throw events and forwards to web clients
     """
     try:
+        # Log ALL messages received
+        logger.info(f"RAW MESSAGE RECEIVED: {data}")
+
         # Parse message data
         event_data = json.loads(data) if isinstance(data, str) else data
         event_type = event_data.get('event', 'UNKNOWN')
 
+        logger.info(f"EVENT TYPE: {event_type}")
+
         # Filter for dart throw events
         if event_type in ['dart1-thrown', 'dart2-thrown', 'dart3-thrown']:
+            # Log the full message for debugging
+            logger.info(f"Full dart message: {json.dumps(event_data, indent=2)}")
+
             # Extract dart information from game object
             game = event_data.get('game', {})
             segment = game.get('fieldNumber', 0)      # Dartboard number (1-20, or 0 for bullseye)
@@ -91,13 +106,15 @@ def on_darts_message(data):
                 'player': player
             }
 
-            logger.info(f"Dart throw: {segment} x{multiplier} = {value} points")
+            logger.info(f"Dart throw from {player}: {segment} x{multiplier} = {value} points")
 
             # Broadcast to all connected web clients
             web_socketio.emit('dart_thrown', dart_throw)
 
     except Exception as e:
         logger.error(f"Error processing dart message: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
 
 
 def connect_to_darts_caller():
@@ -105,13 +122,28 @@ def connect_to_darts_caller():
     Connect to darts-caller WebSocket in a separate thread
     This runs independently from the Flask web server
     """
-    try:
-        logger.info("Connecting to darts-caller at https://localhost:8079...")
-        darts_client.connect("https://localhost:8079")
-        darts_client.wait()  # Keep connection alive
-    except Exception as e:
-        logger.error(f"Failed to connect to darts-caller: {e}")
-        logger.error("Make sure darts-caller is running!")
+    import time
+    max_retries = 5
+    retry_delay = 2
+
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Connecting to darts-caller at https://127.0.0.1:8079... (attempt {attempt + 1}/{max_retries})")
+            darts_client.connect(
+                "https://127.0.0.1:8079",
+                transports=['websocket', 'polling'],
+                wait_timeout=10
+            )
+            darts_client.wait()  # Keep connection alive
+            break
+        except Exception as e:
+            logger.error(f"Connection attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                logger.error("Failed to connect to darts-caller after multiple attempts!")
+                logger.error("Make sure darts-caller is running at https://127.0.0.1:8079")
 
 
 # =============================================================================
@@ -158,6 +190,30 @@ def heist_game():
 def serve_heist_assets(filename):
     """Serve game-specific assets from heist-crew directory"""
     return send_from_directory('games/heist-crew', filename)
+
+
+@app.route('/games/dad-bod-olympics')
+def dad_bod_game():
+    """Serve the Dad Bod Olympics game page"""
+    return send_from_directory('games/dad-bod-olympics', 'dad-bod.html')
+
+
+@app.route('/games/dad-bod-olympics/<path:filename>')
+def serve_dad_bod_assets(filename):
+    """Serve game-specific assets from dad-bod-olympics directory"""
+    return send_from_directory('games/dad-bod-olympics', filename)
+
+
+@app.route('/games/dungeon-crawl')
+def dungeon_game():
+    """Serve the Dungeon of Darts game page"""
+    return send_from_directory('games/dungeon-crawl', 'dungeon.html')
+
+
+@app.route('/games/dungeon-crawl/<path:filename>')
+def serve_dungeon_assets(filename):
+    """Serve game-specific assets from dungeon-crawl directory"""
+    return send_from_directory('games/dungeon-crawl', filename)
 
 
 # =============================================================================

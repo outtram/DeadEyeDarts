@@ -1,0 +1,1081 @@
+/**
+ * Dungeon of Darts - Dark Fantasy Dungeon Crawler Styles
+ * Gothic dungeon theme with animated monsters
+ */
+
+/* Fantasy color palette */
+:root {
+    --dungeon-dark: #0d0d0d;
+    --dungeon-stone: #2a2a2a;
+    --dungeon-moss: #1a3a1a;
+    --torch-orange: #ff6b00;
+    --torch-yellow: #ffcc00;
+    --blood-red: #8b0000;
+    --gold-shine: #ffd700;
+    --health-green: #2ecc71;
+    --mana-blue: #3498db;
+    --poison-purple: #9b59b6;
+    --bone-white: #f5f5dc;
+}
+
+/* Main container */
+.game-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.5rem;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+}
+
+/* Header */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(180deg, var(--dungeon-stone), var(--dungeon-dark));
+    border: 2px solid #444;
+    border-bottom: 3px solid var(--torch-orange);
+    margin-bottom: 0.5rem;
+}
+
+.header-title h1 {
+    font-size: 1.8rem;
+    color: var(--torch-orange);
+    text-shadow: 0 0 10px var(--torch-orange), 0 0 20px #ff4400;
+    margin: 0;
+    font-family: 'Times New Roman', serif;
+    letter-spacing: 0.1em;
+}
+
+.subtitle {
+    color: var(--bone-white);
+    font-size: 0.8rem;
+    margin: 0;
+    opacity: 0.7;
+}
+
+/* Screens */
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ========================================
+   TITLE SCREEN
+   ======================================== */
+
+.title-panel {
+    background: linear-gradient(180deg, #1a1a1a, #0d0d0d);
+    border: 3px solid #444;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+}
+
+.title-art {
+    margin-bottom: 1.5rem;
+}
+
+.dungeon-ascii {
+    color: var(--torch-orange);
+    font-size: 0.7rem;
+    line-height: 1.2;
+    text-shadow: 0 0 5px var(--torch-orange);
+}
+
+.title-panel h2 {
+    color: var(--gold-shine);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    font-family: 'Times New Roman', serif;
+    text-shadow: 0 0 10px var(--gold-shine);
+}
+
+.story-text {
+    color: var(--bone-white);
+    font-size: 1rem;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+}
+
+.story-text .highlight {
+    color: var(--torch-orange);
+    font-weight: bold;
+}
+
+/* Hero Roster */
+.hero-roster {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.hero-card {
+    background: linear-gradient(180deg, #2a2a2a, #1a1a1a);
+    border: 2px solid #555;
+    border-radius: 8px;
+    padding: 1rem;
+    width: 120px;
+    transition: all 0.3s ease;
+}
+
+.hero-card:hover {
+    border-color: var(--gold-shine);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    transform: translateY(-5px);
+}
+
+.hero-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.hero-name {
+    color: var(--gold-shine);
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.hero-class {
+    color: #888;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.btn-large {
+    font-size: 1.3rem;
+    padding: 1rem 3rem;
+    background: linear-gradient(180deg, var(--blood-red), #5a0000);
+    border: 2px solid var(--torch-orange);
+    color: var(--bone-white);
+    text-shadow: 0 0 5px #000;
+    transition: all 0.3s ease;
+}
+
+.btn-large:hover {
+    background: linear-gradient(180deg, #aa0000, var(--blood-red));
+    box-shadow: 0 0 20px var(--torch-orange);
+}
+
+/* ========================================
+   GAME SCREEN
+   ======================================== */
+
+/* Dungeon Info Bar */
+.dungeon-info {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 0.5rem 1rem;
+    background: var(--dungeon-stone);
+    border: 2px solid #444;
+    margin-bottom: 0.5rem;
+}
+
+.level-indicator, .room-indicator, .party-gold {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.level-label, .room-label {
+    color: #888;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.level-number, .room-number {
+    color: var(--torch-orange);
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: 0 0 10px var(--torch-orange);
+}
+
+.room-total {
+    color: #666;
+}
+
+.gold-icon {
+    font-size: 1.2rem;
+}
+
+#party-gold {
+    color: var(--gold-shine);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Dungeon View */
+.dungeon-view {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Dungeon Room */
+.dungeon-room {
+    background: linear-gradient(180deg, #1a1a1a, #0d0d0d);
+    border: 3px solid #333;
+    border-radius: 10px;
+    min-height: 350px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Room Background with torches */
+.room-background {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 10% 20%, rgba(255, 107, 0, 0.15) 0%, transparent 40%),
+        radial-gradient(ellipse at 90% 20%, rgba(255, 107, 0, 0.15) 0%, transparent 40%),
+        linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+}
+
+.stone-wall {
+    position: absolute;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(90deg, transparent, transparent 50px, #222 50px, #222 51px),
+        repeating-linear-gradient(0deg, transparent, transparent 30px, #222 30px, #222 31px);
+    opacity: 0.3;
+}
+
+/* Animated Torches */
+.torch {
+    position: absolute;
+    top: 10px;
+    width: 30px;
+    height: 60px;
+    z-index: 5;
+}
+
+.torch.left { left: 20px; }
+.torch.right { right: 20px; }
+
+.torch::before {
+    content: '🔥';
+    font-size: 2rem;
+    animation: torchFlicker 0.5s infinite alternate;
+}
+
+@keyframes torchFlicker {
+    0% { opacity: 0.8; transform: scale(1) rotate(-5deg); }
+    50% { opacity: 1; transform: scale(1.1) rotate(5deg); }
+    100% { opacity: 0.9; transform: scale(1.05) rotate(-3deg); }
+}
+
+/* Monster Arena */
+.monster-arena {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 250px;
+    padding: 1rem;
+}
+
+/* Monster Styling */
+.monster {
+    text-align: center;
+    padding: 1.5rem 2rem;
+    background: radial-gradient(ellipse at center, rgba(139, 0, 0, 0.3), transparent 70%);
+    border-radius: 10px;
+    animation: monsterIdle 2s ease-in-out infinite;
+}
+
+.monster.boss {
+    background: radial-gradient(ellipse at center, rgba(148, 0, 211, 0.4), transparent 70%);
+    animation: bossIdle 1.5s ease-in-out infinite;
+}
+
+@keyframes monsterIdle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes bossIdle {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-15px) scale(1.05); }
+}
+
+.monster.spawn-animation {
+    animation: monsterSpawn 0.5s ease-out;
+}
+
+@keyframes monsterSpawn {
+    0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.monster.hit-shake {
+    animation: hitShake 0.3s ease-out;
+}
+
+@keyframes hitShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-20px) rotate(-5deg); }
+    75% { transform: translateX(20px) rotate(5deg); }
+}
+
+.monster.death-animation {
+    animation: monsterDeath 1s ease-out forwards;
+}
+
+@keyframes monsterDeath {
+    0% { transform: scale(1); opacity: 1; }
+    30% { transform: scale(1.2); }
+    100% { transform: scale(0) rotate(720deg); opacity: 0; }
+}
+
+.monster-icon {
+    font-size: 5rem;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.5));
+}
+
+.monster.boss .monster-icon {
+    font-size: 7rem;
+    filter: drop-shadow(0 0 30px rgba(148, 0, 211, 0.7));
+}
+
+.monster-name {
+    color: var(--bone-white);
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 0.75rem;
+    text-shadow: 2px 2px 4px #000;
+}
+
+.monster.boss .monster-name {
+    color: var(--poison-purple);
+    font-size: 1.3rem;
+    text-shadow: 0 0 10px var(--poison-purple);
+}
+
+/* Monster HP Bar */
+.monster-hp-bar {
+    width: 200px;
+    height: 20px;
+    background: #222;
+    border: 2px solid #444;
+    border-radius: 10px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.monster-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--health-green), #27ae60);
+    transition: width 0.3s ease;
+    border-radius: 8px;
+}
+
+.monster-hp-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+}
+
+.weak-spot {
+    margin-top: 0.5rem;
+    color: var(--torch-orange);
+    font-size: 0.9rem;
+    font-weight: bold;
+    animation: weakSpotPulse 1s ease-in-out infinite;
+}
+
+@keyframes weakSpotPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Target Indicator */
+.target-indicator {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    border: 3px solid var(--gold-shine);
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    text-align: center;
+    z-index: 20;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.target-label {
+    display: block;
+    color: #888;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.target-number {
+    display: block;
+    color: var(--gold-shine);
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 0 0 15px var(--gold-shine);
+    animation: targetPulse 1s ease-in-out infinite;
+}
+
+@keyframes targetPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.target-hint {
+    display: block;
+    color: #888;
+    font-size: 0.75rem;
+}
+
+/* Combat Log */
+.combat-log {
+    background: linear-gradient(180deg, #1a1a1a, #0d0d0d);
+    border: 2px solid #444;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    max-height: 350px;
+}
+
+.log-header {
+    background: var(--dungeon-stone);
+    padding: 0.5rem;
+    text-align: center;
+    color: var(--torch-orange);
+    font-weight: bold;
+    border-bottom: 2px solid #444;
+    font-size: 0.9rem;
+}
+
+.log-entries {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.log-entry {
+    padding: 0.4rem 0.5rem;
+    margin-bottom: 0.3rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    animation: logSlide 0.3s ease-out;
+}
+
+@keyframes logSlide {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.log-entry.system { color: #888; }
+.log-entry.encounter { color: var(--torch-orange); background: rgba(255, 107, 0, 0.1); }
+.log-entry.boss { color: var(--poison-purple); background: rgba(148, 0, 211, 0.2); font-weight: bold; }
+.log-entry.taunt { color: #aaa; font-style: italic; }
+.log-entry.combat { color: var(--bone-white); }
+.log-entry.critical { color: var(--gold-shine); background: rgba(255, 215, 0, 0.1); font-weight: bold; }
+.log-entry.miss { color: #ff6666; }
+.log-entry.danger { color: var(--blood-red); background: rgba(139, 0, 0, 0.2); }
+.log-entry.death { color: #ff0000; font-weight: bold; }
+.log-entry.victory { color: var(--health-green); background: rgba(46, 204, 113, 0.1); }
+.log-entry.heal { color: var(--health-green); }
+.log-entry.special { color: var(--mana-blue); }
+.log-entry.spell { color: var(--poison-purple); background: rgba(148, 0, 211, 0.15); font-weight: bold; }
+.log-entry.mana { color: var(--mana-blue); }
+.log-entry.powerup { color: var(--gold-shine); background: rgba(255, 215, 0, 0.15); }
+.log-entry.buff { color: #9b59b6; }
+.log-entry.gold { color: var(--gold-shine); }
+.log-entry.tip { color: #888; font-style: italic; background: rgba(255, 255, 255, 0.05); }
+
+/* Party Status */
+.party-status {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--dungeon-stone);
+    border: 2px solid #444;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.hero-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.hero-status.active {
+    border-color: var(--gold-shine);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+.hero-status.dead {
+    opacity: 0.4;
+    filter: grayscale(100%);
+}
+
+.hero-status-icon {
+    font-size: 1.5rem;
+}
+
+.hero-status-info {
+    min-width: 80px;
+}
+
+.hero-status-name {
+    color: var(--bone-white);
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.hero-status-hp-bar {
+    width: 100%;
+    height: 8px;
+    background: #333;
+    border-radius: 4px;
+    margin: 0.25rem 0;
+    overflow: hidden;
+}
+
+.hero-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--health-green), #27ae60);
+    transition: width 0.3s ease;
+}
+
+/* Mana Bar */
+.hero-status-mana-bar {
+    width: 100%;
+    height: 6px;
+    background: #222;
+    border-radius: 3px;
+    margin: 0.15rem 0;
+    overflow: hidden;
+}
+
+.hero-mana-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--mana-blue), #2980b9);
+    transition: width 0.3s ease;
+}
+
+.hero-status-values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6rem;
+}
+
+.hp-value {
+    color: var(--health-green);
+}
+
+.mana-value {
+    color: var(--mana-blue);
+}
+
+.hero-status-hp {
+    color: #888;
+    font-size: 0.65rem;
+}
+
+/* Hero taking damage flash */
+.hero-status.taking-damage {
+    animation: takeDamage 0.5s ease;
+}
+
+@keyframes takeDamage {
+    0%, 100% { background: #1a1a1a; }
+    25%, 75% { background: rgba(139, 0, 0, 0.5); border-color: #ff0000; }
+}
+
+/* Current Attacker & Spell Row */
+.attacker-spell-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Current Attacker */
+.current-attacker {
+    background: linear-gradient(180deg, rgba(255, 215, 0, 0.2), rgba(255, 107, 0, 0.1));
+    border: 2px solid var(--gold-shine);
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.attacker-label {
+    color: #888;
+    font-size: 0.8rem;
+    display: block;
+}
+
+.attacker-name {
+    color: var(--gold-shine);
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: block;
+    text-shadow: 0 0 10px var(--gold-shine);
+}
+
+.attacker-class {
+    color: var(--torch-orange);
+    font-size: 0.9rem;
+    display: block;
+}
+
+/* Floating Damage Numbers */
+.damage-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.floating-damage {
+    position: absolute;
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--blood-red);
+    text-shadow: 2px 2px 4px #000;
+    animation: floatUp 1s ease-out forwards;
+}
+
+.floating-damage.critical {
+    font-size: 3rem;
+    color: var(--gold-shine);
+    text-shadow: 0 0 10px var(--gold-shine), 2px 2px 4px #000;
+}
+
+.floating-damage.spell {
+    font-size: 3.5rem;
+    color: var(--poison-purple);
+    text-shadow: 0 0 15px var(--poison-purple), 0 0 30px #ff00ff, 2px 2px 4px #000;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+}
+
+/* Floating Power-up */
+.floating-powerup {
+    position: absolute;
+    font-size: 1.5rem;
+    text-align: center;
+    color: var(--gold-shine);
+    text-shadow: 0 0 10px var(--gold-shine);
+    animation: powerupFloat 1.5s ease-out forwards;
+    transform: translateX(-50%);
+}
+
+@keyframes powerupFloat {
+    0% { transform: translateX(-50%) translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateX(-50%) translateY(-20px) scale(1.2); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(-80px) scale(1); opacity: 0; }
+}
+
+/* Spell Panel */
+.spell-panel {
+    background: linear-gradient(180deg, rgba(148, 0, 211, 0.2), rgba(52, 152, 219, 0.1));
+    border: 2px solid var(--mana-blue);
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.spell-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.spell-card.disabled {
+    opacity: 0.5;
+}
+
+.spell-card.ready {
+    animation: spellReady 1.5s ease-in-out infinite;
+}
+
+@keyframes spellReady {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 15px var(--mana-blue); }
+}
+
+.spell-icon {
+    font-size: 2rem;
+}
+
+.spell-info {
+    flex: 1;
+}
+
+.spell-name {
+    color: var(--poison-purple);
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.spell-cost {
+    color: var(--mana-blue);
+    font-size: 0.75rem;
+}
+
+.spell-desc {
+    color: #888;
+    font-size: 0.7rem;
+}
+
+.spell-hint {
+    color: var(--gold-shine);
+    font-size: 0.7rem;
+    text-align: right;
+    animation: hintPulse 1s ease-in-out infinite;
+}
+
+.spell-card.disabled .spell-hint {
+    color: #666;
+    animation: none;
+}
+
+@keyframes hintPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Buff Display */
+.buff-display {
+    text-align: center;
+    min-height: 24px;
+}
+
+.active-buffs {
+    display: inline-block;
+    background: rgba(148, 0, 211, 0.2);
+    border: 1px solid var(--poison-purple);
+    border-radius: 15px;
+    padding: 0.25rem 1rem;
+    color: var(--poison-purple);
+    font-size: 0.8rem;
+    animation: buffGlow 2s ease-in-out infinite;
+}
+
+@keyframes buffGlow {
+    0%, 100% { box-shadow: 0 0 5px var(--poison-purple); }
+    50% { box-shadow: 0 0 15px var(--poison-purple); }
+}
+
+/* Spell Effects */
+.spell-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    animation: spellBurst 1s ease-out forwards;
+    z-index: 50;
+    pointer-events: none;
+}
+
+@keyframes spellBurst {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    30% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+.spell-effect.troy { color: #c0c0c0; text-shadow: 0 0 20px #fff; }
+.spell-effect.deano { color: var(--health-green); text-shadow: 0 0 20px var(--health-green); }
+.spell-effect.dave { color: #ff4400; text-shadow: 0 0 30px #ff0000, 0 0 50px #ff4400; }
+.spell-effect.jack { color: #8b4513; text-shadow: 0 0 20px #daa520; }
+.spell-effect.mick { color: #00bfff; text-shadow: 0 0 30px #00bfff, 0 0 50px #fff; }
+.spell-effect.heal { color: var(--health-green); text-shadow: 0 0 30px var(--health-green); }
+
+/* ========================================
+   VICTORY / GAME OVER SCREENS
+   ======================================== */
+
+.victory-panel, .gameover-panel {
+    background: linear-gradient(180deg, #1a1a1a, #0d0d0d);
+    border: 3px solid #444;
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+.victory-title {
+    color: var(--gold-shine);
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 20px var(--gold-shine);
+    animation: victoryGlow 1s ease-in-out infinite alternate;
+}
+
+@keyframes victoryGlow {
+    from { text-shadow: 0 0 10px var(--gold-shine); }
+    to { text-shadow: 0 0 30px var(--gold-shine), 0 0 50px var(--torch-orange); }
+}
+
+.gameover-title {
+    color: var(--blood-red);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 20px var(--blood-red);
+}
+
+.victory-art, .gameover-art {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+}
+
+.victory-stats, .gameover-stats {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border-bottom: 1px solid #333;
+    color: var(--bone-white);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+/* Hero Scores */
+.hero-scores {
+    margin-bottom: 1.5rem;
+}
+
+.hero-score-row {
+    display: grid;
+    grid-template-columns: 40px 1fr auto auto auto;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    margin-bottom: 0.5rem;
+    border-radius: 6px;
+    align-items: center;
+}
+
+.hero-score-spells {
+    color: var(--poison-purple);
+}
+
+.hero-score-row.mvp {
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid var(--gold-shine);
+}
+
+.hero-score-icon {
+    font-size: 1.5rem;
+}
+
+.hero-score-name {
+    color: var(--bone-white);
+    font-weight: bold;
+    text-align: left;
+}
+
+.hero-score-damage {
+    color: var(--blood-red);
+}
+
+.hero-score-kills {
+    color: var(--health-green);
+}
+
+/* MVP Section */
+.mvp-section {
+    margin-bottom: 1.5rem;
+}
+
+.mvp-card {
+    background: linear-gradient(180deg, rgba(255, 215, 0, 0.2), rgba(255, 107, 0, 0.1));
+    border: 3px solid var(--gold-shine);
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+.mvp-title {
+    color: var(--gold-shine);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    animation: mvpShine 2s ease-in-out infinite;
+}
+
+@keyframes mvpShine {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.mvp-icon {
+    font-size: 4rem;
+    margin-bottom: 0.5rem;
+}
+
+.mvp-name {
+    color: var(--gold-shine);
+    font-size: 2rem;
+    font-weight: bold;
+    text-shadow: 0 0 10px var(--gold-shine);
+}
+
+.mvp-stats {
+    color: #888;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.gameover-text {
+    color: #888;
+    margin-bottom: 1.5rem;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 900px) {
+    .dungeon-view {
+        grid-template-columns: 1fr;
+    }
+
+    .combat-log {
+        max-height: 150px;
+    }
+
+    .party-status {
+        flex-wrap: wrap;
+    }
+
+    .hero-status {
+        flex: 1;
+        min-width: 100px;
+    }
+}
+
+@media (max-width: 600px) {
+    .header-title h1 {
+        font-size: 1.2rem;
+    }
+
+    .dungeon-info {
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .monster-icon {
+        font-size: 4rem;
+    }
+
+    .monster.boss .monster-icon {
+        font-size: 5rem;
+    }
+
+    .hero-roster {
+        gap: 0.5rem;
+    }
+
+    .hero-card {
+        width: 100px;
+        padding: 0.75rem;
+    }
+
+    .hero-icon {
+        font-size: 2rem;
+    }
+
+    .hero-name {
+        font-size: 0.85rem;
+    }
+
+    .party-status {
+        gap: 0.25rem;
+    }
+
+    .hero-status {
+        padding: 0.3rem 0.5rem;
+    }
+
+    .hero-status-icon {
+        font-size: 1.2rem;
+    }
+
+    .hero-status-name {
+        font-size: 0.7rem;
+    }
+
+    .attacker-name {
+        font-size: 1.2rem;
+    }
+
+    .target-number {
+        font-size: 2rem;
+    }
+
+    .attacker-spell-row {
+        grid-template-columns: 1fr;
+    }
+
+    .spell-panel {
+        padding: 0.4rem;
+    }
+
+    .spell-icon {
+        font-size: 1.5rem;
+    }
+
+    .spell-name {
+        font-size: 0.8rem;
+    }
+
+    .hero-score-row {
+        grid-template-columns: 30px 1fr auto auto;
+    }
+
+    .hero-score-spells {
+        display: none;
+    }
+}
