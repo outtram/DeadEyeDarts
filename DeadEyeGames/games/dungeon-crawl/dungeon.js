@@ -6,6 +6,139 @@
 
 const DungeonCrawl = (function() {
     // =========================================================================
+    // SOUND EFFECTS (Web Audio API - no external files needed!)
+    // =========================================================================
+
+    let audioContext = null;
+
+    function initAudio() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        return audioContext;
+    }
+
+    function playSound(type) {
+        try {
+            const ctx = initAudio();
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            switch(type) {
+                case 'hit':
+                    // Quick punch sound
+                    oscillator.frequency.setValueAtTime(150, ctx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.1);
+                    break;
+
+                case 'critical':
+                    // Big impact sound
+                    oscillator.frequency.setValueAtTime(200, ctx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.2);
+                    break;
+
+                case 'kill':
+                    // Death explosion - descending boom
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(300, ctx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(20, ctx.currentTime + 0.4);
+                    gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.4);
+                    break;
+
+                case 'spell':
+                    // Magic whoosh - rising then falling
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(200, ctx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.15);
+                    oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.4);
+                    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.4);
+                    break;
+
+                case 'powerup':
+                    // Coin/pickup - happy ascending notes
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+                    oscillator.frequency.setValueAtTime(500, ctx.currentTime + 0.08);
+                    oscillator.frequency.setValueAtTime(600, ctx.currentTime + 0.16);
+                    oscillator.frequency.setValueAtTime(800, ctx.currentTime + 0.24);
+                    gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.35);
+                    break;
+
+                case 'damage':
+                    // Taking damage - ouch!
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(100, ctx.currentTime);
+                    oscillator.frequency.setValueAtTime(80, ctx.currentTime + 0.05);
+                    oscillator.frequency.setValueAtTime(60, ctx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.15);
+                    break;
+
+                case 'miss':
+                    // Whiff - sad descending
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(300, ctx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.15);
+                    gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.15);
+                    break;
+
+                case 'victory':
+                    // Fanfare - triumphant ascending
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+                    oscillator.frequency.setValueAtTime(500, ctx.currentTime + 0.15);
+                    oscillator.frequency.setValueAtTime(600, ctx.currentTime + 0.3);
+                    oscillator.frequency.setValueAtTime(800, ctx.currentTime + 0.45);
+                    gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.6);
+                    break;
+
+                case 'gameover':
+                    // Sad trombone - descending notes
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+                    oscillator.frequency.setValueAtTime(350, ctx.currentTime + 0.2);
+                    oscillator.frequency.setValueAtTime(300, ctx.currentTime + 0.4);
+                    oscillator.frequency.setValueAtTime(200, ctx.currentTime + 0.6);
+                    gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.8);
+                    break;
+            }
+        } catch (e) {
+            // Audio not supported, silently ignore
+            console.log('Audio not available:', e);
+        }
+    }
+
+    // =========================================================================
     // CONFIGURATION
     // =========================================================================
 
@@ -620,6 +753,9 @@ const DungeonCrawl = (function() {
             heroStats[currentHeroIndex].damageDealt += damage;
             if (isCritical) heroStats[currentHeroIndex].criticals++;
 
+            // Play hit sound
+            playSound(isCritical ? 'critical' : 'hit');
+
             // Show floating damage
             showFloatingDamage(damage, isCritical, false, targetMonster.id);
 
@@ -633,6 +769,7 @@ const DungeonCrawl = (function() {
             updateMonsterHP(targetMonster.id);
             addLogEntry(`${message} (${damage} damage to ${targetMonster.name})`, messageType);
         } else {
+            playSound('miss');
             addLogEntry(message, messageType);
         }
 
@@ -711,6 +848,9 @@ const DungeonCrawl = (function() {
         // Deduct mana
         hero.mana -= spell.manaCost;
         heroStats[currentHeroIndex].spellsCast++;
+
+        // Play spell sound!
+        playSound('spell');
 
         // Calculate spell damage with boost
         let spellDamage = spell.damage * partyBuffs.spellBoost;
@@ -826,6 +966,9 @@ const DungeonCrawl = (function() {
 
         hero.hp -= damage;
 
+        // Play damage sound!
+        playSound('damage');
+
         // Flash hero status red
         showHeroDamage(currentHeroIndex, damage);
 
@@ -857,6 +1000,9 @@ const DungeonCrawl = (function() {
 
     function monsterDefeated(monster) {
         const isBoss = currentRoom === ROOMS_PER_FLOOR;
+
+        // Play kill sound!
+        playSound('kill');
 
         // Award gold
         const goldEarned = monster.gold;
@@ -934,6 +1080,9 @@ const DungeonCrawl = (function() {
 
     function dropPowerUp() {
         const powerup = POWERUPS[Math.floor(Math.random() * POWERUPS.length)];
+
+        // Play power-up sound!
+        playSound('powerup');
 
         addLogEntry(`${powerup.icon} ${powerup.name} dropped! ${powerup.message}`, 'powerup');
 
@@ -1163,6 +1312,9 @@ const DungeonCrawl = (function() {
     function victory() {
         gameActive = false;
 
+        // Play victory fanfare!
+        playSound('victory');
+
         setTimeout(() => {
             elements.gameScreen.classList.remove('active');
             elements.victoryScreen.classList.add('active');
@@ -1221,6 +1373,9 @@ const DungeonCrawl = (function() {
 
     function gameOver() {
         gameActive = false;
+
+        // Play sad game over sound
+        playSound('gameover');
 
         setTimeout(() => {
             elements.gameScreen.classList.remove('active');
