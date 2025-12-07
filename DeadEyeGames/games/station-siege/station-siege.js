@@ -253,7 +253,6 @@ const StationSiege = (function() {
     let armory = [];
     let forceFields = [];
     let numberPool = [];  // Available numbers for hostiles
-    let itemNumbers = []; // Numbers that trigger items
 
     // Active effects
     let plasmaActive = false;
@@ -325,8 +324,16 @@ const StationSiege = (function() {
         // Resize canvas
         resizeCanvas();
 
+        // Give player starting power-ups (2 random items)
+        setTimeout(() => {
+            addRandomPowerUp();
+            addRandomPowerUp();
+            showAnnouncement('ARMORY STOCKED!');
+        }, 500);
+
         // Update UI
         updateUI();
+        updateArmoryDisplay();
 
         // Start first round
         startRound();
@@ -339,7 +346,7 @@ const StationSiege = (function() {
     }
 
     function shuffleNumbers() {
-        // Shuffle 1-20
+        // Shuffle 1-20 for hostile number pool
         let numbers = [];
         for (let i = 1; i <= 20; i++) numbers.push(i);
 
@@ -349,9 +356,8 @@ const StationSiege = (function() {
             [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
         }
 
-        // First 12 for hostiles, remaining 8 for items
-        numberPool = numbers.slice(0, 12);
-        itemNumbers = numbers.slice(12);
+        // All numbers available for hostiles (armory picks unused numbers dynamically)
+        numberPool = numbers;
     }
 
     function resizeCanvas() {
@@ -661,8 +667,8 @@ const StationSiege = (function() {
             }
         }
 
-        // Random power-up chance
-        if (Math.random() < 0.2) {
+        // Random power-up chance (40% for regular kills)
+        if (Math.random() < 0.4) {
             addRandomPowerUp();
         }
 
@@ -692,8 +698,9 @@ const StationSiege = (function() {
             return;
         }
 
-        // Check if hit an item number
-        if (itemNumbers.includes(segment)) {
+        // Check if hit an armory item number
+        const armoryItem = armory.find(item => item.number === segment);
+        if (armoryItem) {
             activateItem(segment, multiplier);
             checkRoundEnd();
             return;
@@ -866,15 +873,27 @@ const StationSiege = (function() {
         if (armory.length >= CONFIG.MAX_ARMORY) {
             // Overflow converts to shields
             shields = Math.min(CONFIG.MAX_SHIELDS, shields + 1);
+            showAnnouncement('+1 SHIELD (ARMORY FULL)');
             updateUI();
             return;
         }
 
-        // Pick random item number
-        if (itemNumbers.length === 0) return;
+        // Pick a number not currently used by hostiles or armory
+        const usedByHostiles = hostiles.map(h => h.targetNumber).filter(n => n);
+        const usedByArmory = armory.map(a => a.number);
+        const usedNumbers = [...usedByHostiles, ...usedByArmory];
 
-        const numberIndex = Math.floor(Math.random() * itemNumbers.length);
-        const number = itemNumbers[numberIndex];
+        // Find available numbers (1-20 that aren't in use)
+        const availableNumbers = [];
+        for (let i = 1; i <= 20; i++) {
+            if (!usedNumbers.includes(i)) {
+                availableNumbers.push(i);
+            }
+        }
+
+        if (availableNumbers.length === 0) return;
+
+        const number = availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
 
         // Pick random type
         const types = Object.keys(POWERUP_TYPES);
