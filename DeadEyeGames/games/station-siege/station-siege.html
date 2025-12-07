@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Station Siege - DeadEyeGames</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/cyberpunk.css">
+    <link rel="stylesheet" href="/games/station-siege/station-siege.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/static/js/darts-client.js"></script>
+</head>
+<body class="crt-effect">
+    <div class="game-container">
+        <!-- Header -->
+        <div class="game-header">
+            <a href="/" class="btn btn-secondary back-btn">← Retreat</a>
+            <div class="header-title">
+                <h1>STATION SIEGE</h1>
+                <p class="subtitle">Defend the Station. Throw True.</p>
+            </div>
+            <div id="connection-status" class="status-indicator disconnected">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- Title Screen -->
+        <div id="title-screen" class="screen active">
+            <div class="title-panel">
+                <div class="title-art">
+                    <pre class="station-ascii">
+        ╔══════════════════════════════╗
+        ║     ◇◇◇ STATION SIEGE ◇◇◇    ║
+        ╠══════════════════════════════╣
+        ║                              ║
+        ║      ┌─────────────┐         ║
+        ║   ◄══╪═════╦═════╪══►        ║
+        ║      │  ▓▓▓║▓▓▓  │          ║
+        ║   ◄══╪═════╩═════╪══►        ║
+        ║      └─────────────┘         ║
+        ║                              ║
+        ║    INCOMING HOSTILES: ∞      ║
+        ╚══════════════════════════════╝
+                    </pre>
+                </div>
+
+                <h2>DEFEND THE STATION</h2>
+                <p class="story-text">
+                    Hostile spacecraft are converging on <span class="highlight">Deep Space Station Omega</span>.
+                    You are the last line of defense. Each enemy displays a number -
+                    hit that number on your dartboard to destroy them before they reach the station!
+                </p>
+
+                <div class="instructions">
+                    <div class="instruction-row">
+                        <span class="instruction-icon">🎯</span>
+                        <span>Hit the NUMBER shown on each hostile to damage it</span>
+                    </div>
+                    <div class="instruction-row">
+                        <span class="instruction-icon">×2</span>
+                        <span>DOUBLES deal 2x damage</span>
+                    </div>
+                    <div class="instruction-row">
+                        <span class="instruction-icon">×3</span>
+                        <span>TRIPLES deal 3x damage</span>
+                    </div>
+                    <div class="instruction-row">
+                        <span class="instruction-icon">🎱</span>
+                        <span>BULLSEYE uses Plasma Shots for 3x damage</span>
+                    </div>
+                </div>
+
+                <button id="start-game-btn" class="btn btn-primary btn-large glow-pulse">
+                    LAUNCH DEFENSE
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="game-layout">
+                <!-- Left Side: Battle Canvas -->
+                <div class="battle-section">
+                    <div class="battle-header">
+                        <div class="round-display">
+                            <span class="label">ROUND</span>
+                            <span id="round-number" class="value">1</span>
+                        </div>
+                        <div id="alert-status" class="alert-status warning">
+                            <span class="alert-text">WARNING</span>
+                        </div>
+                        <div class="score-display">
+                            <span class="label">SCORE</span>
+                            <span id="score-value" class="value">0</span>
+                        </div>
+                    </div>
+
+                    <canvas id="battle-canvas" width="600" height="500"></canvas>
+
+                    <!-- Station Status Bar -->
+                    <div class="station-status">
+                        <div class="shields-display">
+                            <span class="label">SHIELDS</span>
+                            <div class="shield-bar">
+                                <div id="shield-fill" class="shield-fill" style="width: 100%"></div>
+                            </div>
+                            <span id="shield-count" class="shield-count">5/5</span>
+                        </div>
+                    </div>
+
+                    <!-- Announcement Banner -->
+                    <div id="announcement" class="announcement hidden">
+                        <span id="announcement-text"></span>
+                    </div>
+                </div>
+
+                <!-- Right Side: Dartboard & Armory -->
+                <div class="control-section">
+                    <!-- Energy Cells (darts remaining) -->
+                    <div class="energy-display">
+                        <span class="label">ENERGY CELLS</span>
+                        <div id="energy-cells" class="energy-cells">
+                            <span class="cell active">◆</span>
+                            <span class="cell active">◆</span>
+                            <span class="cell active">◆</span>
+                        </div>
+                    </div>
+
+                    <!-- Armory (power-ups) -->
+                    <div class="armory-panel">
+                        <div class="armory-header">
+                            <span class="label">ARMORY</span>
+                            <span id="armory-count" class="armory-count">0/6</span>
+                        </div>
+                        <div id="armory-grid" class="armory-grid">
+                            <!-- Power-ups appear here -->
+                        </div>
+                    </div>
+
+                    <!-- Dartboard -->
+                    <div class="dartboard-container">
+                        <svg id="dartboard" viewBox="0 0 400 400" class="dartboard">
+                            <!-- Dartboard will be generated by JS -->
+                        </svg>
+                    </div>
+
+                    <!-- Active Effects -->
+                    <div id="active-effects" class="active-effects">
+                        <!-- EMP, Plasma active indicators -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen">
+            <div class="gameover-panel">
+                <h2 class="gameover-title">STATION DESTROYED</h2>
+                <div class="gameover-art">
+                    <pre class="explosion-ascii">
+     ╲ │ ╱
+    ── ◆ ──
+     ╱ │ ╲
+   BOOM!
+                    </pre>
+                </div>
+
+                <div id="gameover-stats" class="gameover-stats">
+                    <!-- Stats populated by JS -->
+                </div>
+
+                <button id="retry-btn" class="btn btn-primary btn-large">
+                    RETRY MISSION
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/games/station-siege/station-siege.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize darts client
+            DartsClient.init({
+                onDartThrown: (dart) => {
+                    if (StationSiege.isGameActive()) {
+                        StationSiege.handleDartThrow(dart);
+                    }
+                },
+                onDartsStatus: (connected) => {
+                    const startBtn = document.getElementById('start-game-btn');
+                    if (startBtn) {
+                        startBtn.disabled = !connected;
+                        if (!connected) {
+                            startBtn.textContent = 'AWAITING SIGNAL...';
+                        } else {
+                            startBtn.textContent = 'LAUNCH DEFENSE';
+                        }
+                    }
+                }
+            });
+
+            // Start game button
+            document.getElementById('start-game-btn')?.addEventListener('click', () => {
+                StationSiege.startGame();
+            });
+
+            // Retry button
+            document.getElementById('retry-btn')?.addEventListener('click', () => {
+                StationSiege.startGame();
+            });
+        });
+    </script>
+</body>
+</html>

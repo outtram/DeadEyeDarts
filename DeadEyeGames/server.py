@@ -216,6 +216,18 @@ def serve_dungeon_assets(filename):
     return send_from_directory('games/dungeon-crawl', filename)
 
 
+@app.route('/games/station-siege')
+def station_siege_game():
+    """Serve the Station Siege game page"""
+    return send_from_directory('games/station-siege', 'station-siege.html')
+
+
+@app.route('/games/station-siege/<path:filename>')
+def serve_station_siege_assets(filename):
+    """Serve game-specific assets from station-siege directory"""
+    return send_from_directory('games/station-siege', filename)
+
+
 # =============================================================================
 # WEB SOCKET EVENTS (Browser to Server)
 # =============================================================================
