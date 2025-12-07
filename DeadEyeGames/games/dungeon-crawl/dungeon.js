@@ -646,6 +646,19 @@ const DungeonCrawl = (function() {
             }
         }
 
+        // Bonus power-up drops for special throws!
+        // Doubles: 40% chance, Triples: 60% chance, Bullseye: 80% chance
+        if (multiplier === 2 && Math.random() < 0.4) {
+            addLogEntry(`🎯 DOUBLE bonus! A power-up appears!`, 'powerup');
+            setTimeout(() => dropPowerUp(), 500);
+        } else if (multiplier === 3 && Math.random() < 0.6) {
+            addLogEntry(`🎯 TRIPLE bonus! A power-up appears!`, 'powerup');
+            setTimeout(() => dropPowerUp(), 500);
+        } else if (isBullseye && Math.random() < 0.8) {
+            addLogEntry(`🎯 BULLSEYE bonus! A power-up appears!`, 'powerup');
+            setTimeout(() => dropPowerUp(), 500);
+        }
+
         // Decrement darts and check if turn is over
         dartsRemaining--;
         updateDartsDisplay();
