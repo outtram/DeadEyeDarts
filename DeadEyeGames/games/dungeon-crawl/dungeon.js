@@ -12,6 +12,14 @@ const DungeonCrawl = (function() {
     const FLOORS = 3;
     const ROOMS_PER_FLOOR = 5;
 
+    // Configurable settings (can be changed in-game)
+    let gameConfig = {
+        playerCount: 5,
+        dartsPerTurn: 3,
+        minCreatures: 1,
+        maxCreatures: 3
+    };
+
     // The Five Heroes - your mates!
     const HEROES = [
         {
@@ -168,14 +176,17 @@ const DungeonCrawl = (function() {
     // =========================================================================
 
     let gameActive = false;
+    let gamePaused = false;
     let currentFloor = 1;
     let currentRoom = 1;
     let currentHeroIndex = 0;
-    let currentMonster = null;
+    let currentMonsters = [];  // Array of monsters (1-3)
     let partyGold = 0;
+    let dartsRemaining = 3;    // Darts left for current hero
 
     let heroStates = [];
     let heroStats = [];
+    let activeHeroes = [];     // Indices of active heroes based on player count
 
     // Power-up buffs
     let partyBuffs = {
@@ -202,37 +213,53 @@ const DungeonCrawl = (function() {
             partyGold: document.getElementById('party-gold'),
             dungeonRoom: document.getElementById('dungeon-room'),
             monsterArena: document.getElementById('monster-arena'),
-            targetNumber: document.getElementById('target-number'),
-            targetIndicator: document.getElementById('target-indicator'),
+            targetIndicators: document.getElementById('target-indicators'),
             combatLog: document.getElementById('combat-log'),
             logEntries: document.getElementById('log-entries'),
             partyStatus: document.getElementById('party-status'),
             attackerName: document.getElementById('attacker-name'),
             attackerClass: document.getElementById('attacker-class'),
+            dartsRemainingDisplay: document.getElementById('darts-remaining-display'),
             damageContainer: document.getElementById('damage-container'),
             victoryStats: document.getElementById('victory-stats'),
             heroScores: document.getElementById('hero-scores'),
             mvpSection: document.getElementById('mvp-section'),
             gameoverStats: document.getElementById('gameover-stats'),
             spellPanel: document.getElementById('spell-panel'),
-            buffDisplay: document.getElementById('buff-display')
+            buffDisplay: document.getElementById('buff-display'),
+            settingsModal: document.getElementById('settings-modal'),
+            heroRoster: document.getElementById('hero-roster')
         };
     }
 
     function startGame() {
         if (!elements.titleScreen) initElements();
 
-        // Initialize hero states with mana
-        heroStates = HEROES.map(hero => ({
-            ...hero,
-            hp: hero.maxHP,
-            mana: hero.maxMana,
+        // Read configuration from title screen
+        readConfigFromUI();
+
+        // Get custom hero names from inputs
+        const heroInputs = document.querySelectorAll('.hero-name-input');
+        const customNames = Array.from(heroInputs).map(input => input.value.toUpperCase() || HEROES[parseInt(input.closest('.hero-card').dataset.hero)].name);
+
+        // Determine active heroes based on player count
+        activeHeroes = [];
+        for (let i = 0; i < gameConfig.playerCount; i++) {
+            activeHeroes.push(i);
+        }
+
+        // Initialize hero states with mana (only active heroes)
+        heroStates = activeHeroes.map(index => ({
+            ...HEROES[index],
+            name: customNames[index],
+            hp: HEROES[index].maxHP,
+            mana: HEROES[index].maxMana,
             alive: true
         }));
 
         // Initialize hero stats
-        heroStats = HEROES.map(hero => ({
-            name: hero.name,
+        heroStats = activeHeroes.map(index => ({
+            name: customNames[index],
             damageDealt: 0,
             kills: 0,
             criticals: 0,
@@ -243,10 +270,12 @@ const DungeonCrawl = (function() {
 
         // Reset game state
         gameActive = true;
+        gamePaused = false;
         currentFloor = 1;
         currentRoom = 1;
         currentHeroIndex = 0;
         partyGold = 0;
+        dartsRemaining = gameConfig.dartsPerTurn;
         partyBuffs = { bonusDamage: 0, shield: 0, spellBoost: 1 };
 
         // Switch screens
@@ -256,15 +285,29 @@ const DungeonCrawl = (function() {
         // Build party status UI
         buildPartyStatus();
         updateBuffDisplay();
+        updateDartsDisplay();
 
         // Start first room
         enterRoom();
 
         addLogEntry("The party enters the Dungeon of Darts...", 'system');
         addLogEntry("Floor 1 - The Basement of Mild Inconvenience", 'system');
+        addLogEntry(`💡 TIP: Each hero gets ${gameConfig.dartsPerTurn} darts per turn!`, 'tip');
         addLogEntry("💡 TIP: Hit BULLSEYE to cast your hero's spell!", 'tip');
 
         console.log('DungeonCrawl: Game started!');
+    }
+
+    function readConfigFromUI() {
+        const playerCountEl = document.getElementById('player-count');
+        const dartsPerTurnEl = document.getElementById('darts-per-turn');
+
+        if (playerCountEl) {
+            gameConfig.playerCount = parseInt(playerCountEl.textContent) || 5;
+        }
+        if (dartsPerTurnEl) {
+            gameConfig.dartsPerTurn = parseInt(dartsPerTurnEl.textContent) || 3;
+        }
     }
 
     // =========================================================================
@@ -280,32 +323,54 @@ const DungeonCrawl = (function() {
         // Is this a boss room?
         const isBossRoom = currentRoom === ROOMS_PER_FLOOR;
 
-        // Get monster for this room
+        // Clear current monsters
+        currentMonsters = [];
+
+        // Get monster(s) for this room
         if (isBossRoom) {
-            currentMonster = { ...BOSSES[currentFloor] };
-            addLogEntry(`⚠️ BOSS ROOM! ${currentMonster.name} appears!`, 'boss');
+            // Boss room - just one boss
+            const boss = { ...BOSSES[currentFloor], id: 0 };
+            boss.maxHP = boss.hp;
+            currentMonsters.push(boss);
+            addLogEntry(`⚠️ BOSS ROOM! ${boss.name} appears!`, 'boss');
         } else {
+            // Random 1-3 creatures
+            const creatureCount = Math.floor(Math.random() * (gameConfig.maxCreatures - gameConfig.minCreatures + 1)) + gameConfig.minCreatures;
             const floorMonsters = MONSTERS[`floor${currentFloor}`];
-            const randomMonster = floorMonsters[Math.floor(Math.random() * floorMonsters.length)];
-            currentMonster = { ...randomMonster };
-            // Random weak spot for regular monsters
-            currentMonster.weakSpot = Math.floor(Math.random() * 20) + 1;
-            addLogEntry(`${currentMonster.icon} ${currentMonster.name} blocks the path!`, 'encounter');
+
+            for (let i = 0; i < creatureCount; i++) {
+                const randomMonster = floorMonsters[Math.floor(Math.random() * floorMonsters.length)];
+                const monster = {
+                    ...randomMonster,
+                    id: i,
+                    weakSpot: Math.floor(Math.random() * 20) + 1
+                };
+                monster.maxHP = monster.hp;
+                // Assign unique target number for each monster
+                monster.currentTarget = getUniqueTarget(currentMonsters);
+                currentMonsters.push(monster);
+            }
+
+            if (creatureCount === 1) {
+                addLogEntry(`${currentMonsters[0].icon} ${currentMonsters[0].name} blocks the path!`, 'encounter');
+            } else {
+                addLogEntry(`${creatureCount} creatures appear!`, 'encounter');
+                currentMonsters.forEach(m => {
+                    addLogEntry(`  ${m.icon} ${m.name}`, 'encounter');
+                });
+            }
         }
 
-        currentMonster.maxHP = currentMonster.hp;
+        // Spawn monsters visually
+        spawnMonsters(isBossRoom);
 
-        // Spawn monster visually
-        spawnMonster(isBossRoom);
+        // Update target indicators
+        updateTargetIndicators();
 
-        // Set target number (weak spot or random)
-        const target = currentMonster.weakSpot || Math.floor(Math.random() * 20) + 1;
-        elements.targetNumber.textContent = target;
-        currentMonster.currentTarget = target;
-
-        // Monster taunts
+        // Monster taunts (pick one random monster to taunt)
+        const tauntingMonster = currentMonsters[Math.floor(Math.random() * currentMonsters.length)];
         setTimeout(() => {
-            addLogEntry(`"${currentMonster.taunt}"`, 'taunt');
+            addLogEntry(`"${tauntingMonster.taunt}"`, 'taunt');
         }, 500);
 
         // Update current attacker
@@ -313,48 +378,99 @@ const DungeonCrawl = (function() {
         updateSpellPanel();
     }
 
-    function spawnMonster(isBoss) {
+    function getUniqueTarget(existingMonsters) {
+        const usedTargets = existingMonsters.map(m => m.currentTarget);
+        let target;
+        let attempts = 0;
+        do {
+            target = Math.floor(Math.random() * 20) + 1;
+            attempts++;
+        } while (usedTargets.includes(target) && attempts < 50);
+        return target;
+    }
+
+    function spawnMonsters(isBoss) {
         const arena = elements.monsterArena;
         arena.innerHTML = '';
 
-        const monsterEl = document.createElement('div');
-        monsterEl.className = `monster ${isBoss ? 'boss' : ''} spawn-animation`;
-        monsterEl.id = 'active-monster';
+        // Add class based on monster count for layout
+        arena.className = `monster-arena monsters-${currentMonsters.length}`;
 
-        const hpPercent = (currentMonster.hp / currentMonster.maxHP) * 100;
+        currentMonsters.forEach((monster, index) => {
+            const monsterEl = document.createElement('div');
+            monsterEl.className = `monster ${isBoss ? 'boss' : ''} spawn-animation`;
+            monsterEl.id = `monster-${monster.id}`;
+            monsterEl.dataset.monsterId = monster.id;
 
-        monsterEl.innerHTML = `
-            <div class="monster-icon">${currentMonster.icon}</div>
-            <div class="monster-name">${currentMonster.name}</div>
-            <div class="monster-hp-bar">
-                <div class="monster-hp-fill" style="width: ${hpPercent}%"></div>
-                <span class="monster-hp-text">${currentMonster.hp} / ${currentMonster.maxHP}</span>
-            </div>
-            ${currentMonster.weakSpot ? `<div class="weak-spot">WEAK SPOT: ${currentMonster.weakSpot}</div>` : ''}
-        `;
+            const hpPercent = (monster.hp / monster.maxHP) * 100;
 
-        arena.appendChild(monsterEl);
+            monsterEl.innerHTML = `
+                <div class="monster-target-badge">HIT ${monster.currentTarget}</div>
+                <div class="monster-icon">${monster.icon}</div>
+                <div class="monster-name">${monster.name}</div>
+                <div class="monster-hp-bar">
+                    <div class="monster-hp-fill" style="width: ${hpPercent}%"></div>
+                    <span class="monster-hp-text">${monster.hp} / ${monster.maxHP}</span>
+                </div>
+            `;
 
-        // Remove spawn animation class after animation completes
-        setTimeout(() => monsterEl.classList.remove('spawn-animation'), 500);
+            arena.appendChild(monsterEl);
+
+            // Remove spawn animation class after animation completes (staggered)
+            setTimeout(() => monsterEl.classList.remove('spawn-animation'), 300 + (index * 200));
+        });
     }
 
-    function updateMonsterHP() {
-        const hpFill = document.querySelector('.monster-hp-fill');
-        const hpText = document.querySelector('.monster-hp-text');
+    // Keep old function name for compatibility
+    function spawnMonster(isBoss) {
+        spawnMonsters(isBoss);
+    }
 
-        if (hpFill && hpText) {
-            const hpPercent = Math.max(0, (currentMonster.hp / currentMonster.maxHP) * 100);
-            hpFill.style.width = `${hpPercent}%`;
-            hpText.textContent = `${Math.max(0, currentMonster.hp)} / ${currentMonster.maxHP}`;
+    function updateMonsterHP(monsterId = null) {
+        // Update all monsters or specific one
+        const monstersToUpdate = monsterId !== null
+            ? currentMonsters.filter(m => m.id === monsterId)
+            : currentMonsters;
 
-            // Color change based on HP
-            if (hpPercent < 25) {
-                hpFill.style.background = 'linear-gradient(90deg, #ff0000, #ff4444)';
-            } else if (hpPercent < 50) {
-                hpFill.style.background = 'linear-gradient(90deg, #ff8800, #ffaa00)';
+        monstersToUpdate.forEach(monster => {
+            const monsterEl = document.getElementById(`monster-${monster.id}`);
+            if (!monsterEl) return;
+
+            const hpFill = monsterEl.querySelector('.monster-hp-fill');
+            const hpText = monsterEl.querySelector('.monster-hp-text');
+
+            if (hpFill && hpText) {
+                const hpPercent = Math.max(0, (monster.hp / monster.maxHP) * 100);
+                hpFill.style.width = `${hpPercent}%`;
+                hpText.textContent = `${Math.max(0, monster.hp)} / ${monster.maxHP}`;
+
+                // Color change based on HP
+                if (hpPercent < 25) {
+                    hpFill.style.background = 'linear-gradient(90deg, #ff0000, #ff4444)';
+                } else if (hpPercent < 50) {
+                    hpFill.style.background = 'linear-gradient(90deg, #ff8800, #ffaa00)';
+                }
             }
-        }
+        });
+    }
+
+    function updateTargetIndicators() {
+        if (!elements.targetIndicators) return;
+
+        const livingMonsters = currentMonsters.filter(m => m.hp > 0);
+
+        let html = '';
+        livingMonsters.forEach(monster => {
+            html += `
+                <div class="target-indicator" data-monster-id="${monster.id}">
+                    <span class="target-icon">${monster.icon}</span>
+                    <span class="target-label">HIT</span>
+                    <span class="target-number">${monster.currentTarget}</span>
+                </div>
+            `;
+        });
+
+        elements.targetIndicators.innerHTML = html;
     }
 
     // =========================================================================
@@ -362,7 +478,11 @@ const DungeonCrawl = (function() {
     // =========================================================================
 
     function handleDartThrow(dart) {
-        if (!gameActive || !currentMonster) return;
+        if (!gameActive || gamePaused || currentMonsters.length === 0) return;
+
+        // Get living monsters
+        const livingMonsters = currentMonsters.filter(m => m.hp > 0);
+        if (livingMonsters.length === 0) return;
 
         const hero = heroStates[currentHeroIndex];
         if (!hero.alive) {
@@ -371,24 +491,41 @@ const DungeonCrawl = (function() {
         }
 
         const { segment, multiplier, value } = dart;
-        const target = currentMonster.currentTarget;
-        const isWeakSpot = segment === currentMonster.weakSpot;
         const isBullseye = segment === 25 || segment === 0;
-        const isInnerBull = segment === 25 && multiplier === 2; // Double bull
 
-        console.log(`DungeonCrawl: ${hero.name} throws - ${segment} x${multiplier}`);
+        console.log(`DungeonCrawl: ${hero.name} throws - ${segment} x${multiplier} (Dart ${gameConfig.dartsPerTurn - dartsRemaining + 1}/${gameConfig.dartsPerTurn})`);
 
         // Check for spell cast (Bullseye!)
         if (isBullseye && hero.mana >= hero.spell.manaCost) {
             castSpell(hero);
+            dartsRemaining--;
+            updateDartsDisplay();
+            checkEndOfTurn();
             return;
         }
+
+        // Find which monster was targeted (by matching target number)
+        let targetMonster = livingMonsters.find(m => m.currentTarget === segment);
+
+        // If no exact match, check for weak spots
+        if (!targetMonster) {
+            targetMonster = livingMonsters.find(m => m.weakSpot === segment);
+        }
+
+        // If still no match, damage goes to first living monster but reduced
+        const hitSpecificTarget = !!targetMonster;
+        if (!targetMonster) {
+            targetMonster = livingMonsters[0];
+        }
+
+        const target = targetMonster.currentTarget;
+        const isWeakSpot = segment === targetMonster.weakSpot;
 
         let damage = 0;
         let message = '';
         let messageType = 'combat';
         let isCritical = false;
-        let isGoodHit = false; // Track if this was a successful attack
+        let isGoodHit = false;
 
         // Calculate damage based on hit
         if (segment === target || isWeakSpot) {
@@ -403,53 +540,56 @@ const DungeonCrawl = (function() {
             } else {
                 message = getRandomMessage('hit').replace('{hero}', hero.name);
             }
-        } else if (Math.abs(segment - target) <= 2 && segment > 0 && segment <= 20) {
+        } else if (hitSpecificTarget && Math.abs(segment - target) <= 2 && segment > 0 && segment <= 20) {
             // Close hit (within 2 numbers) - DECENT HIT
             isGoodHit = true;
             damage = Math.floor(value * 1.5);
-            message = `${hero.name} grazes the target! Close enough!`;
+            message = `${hero.name} grazes ${targetMonster.name}! Close enough!`;
         } else if (isBullseye) {
-            // Bullseye but not enough mana - still good damage
+            // Bullseye but not enough mana - still good damage to random monster
             isGoodHit = true;
-            damage = hero.name === 'DAVE' ? value * 3 : value * 2;
-            message = hero.name === 'DAVE'
-                ? `🔥 DAVE's FIREBALL! The bullseye erupts in flame!`
+            const heroClass = HEROES.find(h => h.name === hero.name)?.class || '';
+            damage = heroClass.includes('Fire') ? value * 3 : value * 2;
+            message = heroClass.includes('Fire')
+                ? `🔥 ${hero.name}'s FIREBALL! The bullseye erupts in flame!`
                 : `${hero.name} hits the bullseye! (Not enough mana for spell)`;
             messageType = 'critical';
             isCritical = true;
-            // Restore some mana on bullseye
             hero.mana = Math.min(hero.maxMana, hero.mana + 10);
             addLogEntry(`✨ +10 Mana restored!`, 'mana');
         } else if (multiplier === 3) {
-            // Triple - Troy's critical strike bonus - GOOD HIT
+            // Triple - bonus for Blade Master class
             isGoodHit = true;
-            damage = hero.name === 'TROY' ? value * 3 : value;
-            if (hero.name === 'TROY') {
-                message = `⚔️ TROY's CRITICAL STRIKE! Triple damage unleashed!`;
+            const heroClass = HEROES.find(h => h.name === hero.name)?.class || '';
+            damage = heroClass.includes('Blade') ? value * 3 : value;
+            if (heroClass.includes('Blade')) {
+                message = `⚔️ ${hero.name}'s CRITICAL STRIKE! Triple damage unleashed!`;
                 messageType = 'critical';
                 isCritical = true;
             } else {
                 message = `${hero.name} lands a powerful triple!`;
             }
         } else if (multiplier === 2) {
-            // Double - Jack's precision bonus - GOOD HIT
+            // Double - bonus for Ranger class
             isGoodHit = true;
-            damage = hero.name === 'JACK' ? value * 2 : value;
-            if (hero.name === 'JACK') {
-                message = `🏹 JACK's PRECISION SHOT! Double finds the mark!`;
+            const heroClass = HEROES.find(h => h.name === hero.name)?.class || '';
+            damage = heroClass.includes('Ranger') ? value * 2 : value;
+            if (heroClass.includes('Ranger')) {
+                message = `🏹 ${hero.name}'s PRECISION SHOT! Double finds the mark!`;
                 messageType = 'critical';
                 isCritical = true;
             } else {
                 message = `${hero.name} scores a double!`;
             }
         } else if (segment >= 15 && segment <= 20) {
-            // High number - Mick's chain lightning - DECENT HIT
+            // High number - bonus for Storm Caller class
             isGoodHit = true;
-            damage = value;
-            if (hero.name === 'MICK') {
+            const heroClass = HEROES.find(h => h.name === hero.name)?.class || '';
+            if (heroClass.includes('Storm')) {
                 damage = Math.floor(value * 1.5);
-                message = `⚡ MICK's CHAIN LIGHTNING! High number chains bonus damage!`;
+                message = `⚡ ${hero.name}'s CHAIN LIGHTNING! High number chains bonus damage!`;
             } else {
+                damage = value;
                 message = `${hero.name} lands a solid hit!`;
             }
         } else if (segment >= 10 && segment <= 14) {
@@ -458,9 +598,9 @@ const DungeonCrawl = (function() {
             damage = value;
             message = `${hero.name} hits for ${value}!`;
         } else {
-            // Low numbers (1-9) or complete miss - BAD HIT, monster attacks!
+            // Low numbers (1-9) or didn't hit any target - BAD HIT
             isGoodHit = false;
-            damage = Math.floor(value * 0.5); // Reduced damage
+            damage = Math.floor(value * 0.5);
             message = getRandomMessage('miss').replace('{hero}', hero.name);
             messageType = 'miss';
             heroStats[currentHeroIndex].misses++;
@@ -476,43 +616,80 @@ const DungeonCrawl = (function() {
 
         // Apply damage to monster
         if (damage > 0) {
-            currentMonster.hp -= damage;
+            targetMonster.hp -= damage;
             heroStats[currentHeroIndex].damageDealt += damage;
             if (isCritical) heroStats[currentHeroIndex].criticals++;
 
             // Show floating damage
-            showFloatingDamage(damage, isCritical);
+            showFloatingDamage(damage, isCritical, false, targetMonster.id);
 
             // Shake monster on hit
-            const monsterEl = document.getElementById('active-monster');
+            const monsterEl = document.getElementById(`monster-${targetMonster.id}`);
             if (monsterEl) {
                 monsterEl.classList.add('hit-shake');
                 setTimeout(() => monsterEl.classList.remove('hit-shake'), 300);
             }
 
-            updateMonsterHP();
-            addLogEntry(`${message} (${damage} damage)`, messageType);
+            updateMonsterHP(targetMonster.id);
+            addLogEntry(`${message} (${damage} damage to ${targetMonster.name})`, messageType);
         } else {
             addLogEntry(message, messageType);
         }
 
-        // Check if monster is dead
-        if (currentMonster.hp <= 0) {
-            monsterDefeated();
+        // Check if this monster is dead
+        if (targetMonster.hp <= 0) {
+            monsterDefeated(targetMonster);
         } else {
-            // Monster counter-attacks on BAD hits (low numbers or misses)
+            // Monster counter-attacks on BAD hits
             if (!isGoodHit) {
-                monsterAttack(hero);
+                monsterAttack(hero, targetMonster);
             }
-
-            // Next hero's turn
-            nextHero();
         }
+
+        // Decrement darts and check if turn is over
+        dartsRemaining--;
+        updateDartsDisplay();
+        checkEndOfTurn();
 
         // Update UI
         buildPartyStatus();
         updateCurrentAttacker();
         updateSpellPanel();
+        updateTargetIndicators();
+    }
+
+    function checkEndOfTurn() {
+        // Check if all monsters are dead first
+        const livingMonsters = currentMonsters.filter(m => m.hp > 0);
+        if (livingMonsters.length === 0) {
+            // Room cleared - will be handled by monsterDefeated
+            return;
+        }
+
+        // Check if hero has used all darts
+        if (dartsRemaining <= 0) {
+            nextHero();
+        }
+    }
+
+    function updateDartsDisplay() {
+        if (!elements.dartsRemainingDisplay) return;
+
+        let display = '';
+        for (let i = 0; i < gameConfig.dartsPerTurn; i++) {
+            if (i < dartsRemaining) {
+                display += '🎯 ';
+            } else {
+                display += '⚫ ';
+            }
+        }
+        elements.dartsRemainingDisplay.textContent = display.trim();
+
+        // Also update in-game settings modal if open
+        const dartsRemainingEl = document.getElementById('darts-remaining');
+        if (dartsRemainingEl) {
+            dartsRemainingEl.textContent = dartsRemaining;
+        }
     }
 
     function castSpell(hero) {
@@ -544,34 +721,37 @@ const DungeonCrawl = (function() {
             addLogEntry(`🏰 FORTRESS heals all heroes for 40 HP!`, 'heal');
             showSpellEffect('heal');
         } else {
-            // Damage spell
-            currentMonster.hp -= spellDamage;
-            heroStats[currentHeroIndex].damageDealt += spellDamage;
+            // Damage spell - hits all monsters!
+            const livingMonsters = currentMonsters.filter(m => m.hp > 0);
+            const damagePerMonster = Math.floor(spellDamage / livingMonsters.length);
 
-            showFloatingDamage(spellDamage, true, true);
+            livingMonsters.forEach(monster => {
+                monster.hp -= damagePerMonster;
+                heroStats[currentHeroIndex].damageDealt += damagePerMonster;
+
+                showFloatingDamage(damagePerMonster, true, true, monster.id);
+
+                // Shake monster
+                const monsterEl = document.getElementById(`monster-${monster.id}`);
+                if (monsterEl) {
+                    monsterEl.classList.add('hit-shake');
+                    setTimeout(() => monsterEl.classList.remove('hit-shake'), 500);
+                }
+
+                // Check if this monster died
+                if (monster.hp <= 0) {
+                    monsterDefeated(monster);
+                }
+            });
+
             showSpellEffect(hero.name.toLowerCase());
-
-            addLogEntry(`${spell.icon} ${spell.desc} (${spellDamage} damage!)`, 'spell');
-
-            // Shake monster
-            const monsterEl = document.getElementById('active-monster');
-            if (monsterEl) {
-                monsterEl.classList.add('hit-shake');
-                setTimeout(() => monsterEl.classList.remove('hit-shake'), 500);
-            }
-
+            addLogEntry(`${spell.icon} ${spell.desc} (${damagePerMonster} damage to each enemy!)`, 'spell');
             updateMonsterHP();
-        }
-
-        // Check if monster is dead
-        if (currentMonster.hp <= 0) {
-            monsterDefeated();
-        } else {
-            nextHero();
         }
 
         buildPartyStatus();
         updateSpellPanel();
+        updateTargetIndicators();
     }
 
     function showSpellEffect(type) {
@@ -606,7 +786,14 @@ const DungeonCrawl = (function() {
         setTimeout(() => effect.remove(), 1000);
     }
 
-    function monsterAttack(hero) {
+    function monsterAttack(hero, monster = null) {
+        // If no specific monster, pick a random living one
+        if (!monster) {
+            const livingMonsters = currentMonsters.filter(m => m.hp > 0);
+            if (livingMonsters.length === 0) return;
+            monster = livingMonsters[Math.floor(Math.random() * livingMonsters.length)];
+        }
+
         // Check for shield buff
         if (partyBuffs.shield > 0) {
             partyBuffs.shield--;
@@ -615,12 +802,13 @@ const DungeonCrawl = (function() {
             return;
         }
 
-        let damage = currentMonster.damage;
+        let damage = monster.damage;
 
-        // Deano takes less damage (Tank)
-        if (hero.name === 'DEANO') {
+        // Tank class takes less damage
+        const heroClass = HEROES.find(h => h.name === hero.name)?.class || '';
+        if (heroClass.includes('Tank')) {
             damage = Math.floor(damage * 0.5);
-            addLogEntry(`🛡️ DEANO's SHIELD WALL absorbs half the damage!`, 'special');
+            addLogEntry(`🛡️ ${hero.name}'s SHIELD WALL absorbs half the damage!`, 'special');
         }
 
         hero.hp -= damage;
@@ -629,7 +817,7 @@ const DungeonCrawl = (function() {
         showHeroDamage(currentHeroIndex, damage);
 
         const attackMsg = getRandomMessage('monsterAttack')
-            .replace('{monster}', currentMonster.name)
+            .replace('{monster}', monster.name)
             .replace('{hero}', hero.name);
         addLogEntry(`${attackMsg} (${damage} damage to ${hero.name})`, 'danger');
 
@@ -654,63 +842,81 @@ const DungeonCrawl = (function() {
         }
     }
 
-    function monsterDefeated() {
+    function monsterDefeated(monster) {
         const isBoss = currentRoom === ROOMS_PER_FLOOR;
 
         // Award gold
-        const goldEarned = currentMonster.gold;
+        const goldEarned = monster.gold;
         partyGold += goldEarned;
         heroStats[currentHeroIndex].goldEarned += goldEarned;
         heroStats[currentHeroIndex].kills++;
 
         // Death animation
-        const monsterEl = document.getElementById('active-monster');
+        const monsterEl = document.getElementById(`monster-${monster.id}`);
         if (monsterEl) {
             monsterEl.classList.add('death-animation');
+            // Remove monster element after animation
+            setTimeout(() => monsterEl.remove(), 800);
         }
 
-        const killMsg = getRandomMessage('kill').replace('{monster}', currentMonster.name);
+        const killMsg = getRandomMessage('kill').replace('{monster}', monster.name);
         addLogEntry(`${killMsg} (+${goldEarned} gold)`, 'victory');
 
         elements.partyGold.textContent = partyGold;
 
         // Check for power-up drop
-        if (Math.random() < currentMonster.dropChance) {
+        if (Math.random() < monster.dropChance) {
             setTimeout(() => dropPowerUp(), 800);
         }
 
-        // Progress to next room after delay
-        setTimeout(() => {
-            if (isBoss) {
-                // Floor cleared
-                if (currentFloor >= FLOORS) {
-                    // Game won!
-                    victory();
-                } else {
-                    // Next floor
-                    currentFloor++;
-                    currentRoom = 1;
-                    addLogEntry(`🎉 FLOOR ${currentFloor - 1} CLEARED!`, 'victory');
-                    addLogEntry(`Descending to Floor ${currentFloor}...`, 'system');
+        // Update target indicators
+        updateTargetIndicators();
 
-                    // Heal and restore mana between floors
-                    heroStates.forEach(hero => {
-                        if (hero.alive) {
-                            hero.hp = Math.min(hero.maxHP, hero.hp + 40);
-                            hero.mana = Math.min(hero.maxMana, hero.mana + 20);
-                        }
-                    });
-                    addLogEntry(`The party rests: +40 HP, +20 Mana!`, 'heal');
-                    buildPartyStatus();
+        // Check if all monsters in room are dead
+        const livingMonsters = currentMonsters.filter(m => m.hp > 0);
+        if (livingMonsters.length === 0) {
+            // Room cleared!
+            setTimeout(() => {
+                if (isBoss) {
+                    // Floor cleared
+                    if (currentFloor >= FLOORS) {
+                        // Game won!
+                        victory();
+                    } else {
+                        // Next floor
+                        currentFloor++;
+                        currentRoom = 1;
+                        addLogEntry(`🎉 FLOOR ${currentFloor - 1} CLEARED!`, 'victory');
+                        addLogEntry(`Descending to Floor ${currentFloor}...`, 'system');
+
+                        // Heal and restore mana between floors
+                        heroStates.forEach(hero => {
+                            if (hero.alive) {
+                                hero.hp = Math.min(hero.maxHP, hero.hp + 40);
+                                hero.mana = Math.min(hero.maxMana, hero.mana + 20);
+                            }
+                        });
+                        addLogEntry(`The party rests: +40 HP, +20 Mana!`, 'heal');
+                        buildPartyStatus();
+
+                        // Reset darts for new room
+                        dartsRemaining = gameConfig.dartsPerTurn;
+                        updateDartsDisplay();
+
+                        enterRoom();
+                    }
+                } else {
+                    // Next room
+                    currentRoom++;
+
+                    // Reset darts for new room
+                    dartsRemaining = gameConfig.dartsPerTurn;
+                    updateDartsDisplay();
 
                     enterRoom();
                 }
-            } else {
-                // Next room
-                currentRoom++;
-                enterRoom();
-            }
-        }, 1800);
+            }, 1200);
+        }
     }
 
     function dropPowerUp() {
@@ -792,21 +998,31 @@ const DungeonCrawl = (function() {
     }
 
     function nextHero() {
-        // Find next alive hero
+        // Find next alive hero (only among active heroes)
         let attempts = 0;
         do {
-            currentHeroIndex = (currentHeroIndex + 1) % HEROES.length;
+            currentHeroIndex = (currentHeroIndex + 1) % heroStates.length;
             attempts++;
-        } while (!heroStates[currentHeroIndex].alive && attempts < HEROES.length);
+        } while (!heroStates[currentHeroIndex].alive && attempts < heroStates.length);
+
+        // Reset darts for new hero
+        dartsRemaining = gameConfig.dartsPerTurn;
+        updateDartsDisplay();
 
         updateCurrentAttacker();
         updateSpellPanel();
 
-        // Generate new target for variety
-        if (currentMonster && currentMonster.hp > 0) {
-            const newTarget = currentMonster.weakSpot || Math.floor(Math.random() * 20) + 1;
-            currentMonster.currentTarget = newTarget;
-            elements.targetNumber.textContent = newTarget;
+        // Optionally shuffle monster targets for variety
+        const livingMonsters = currentMonsters.filter(m => m.hp > 0);
+        if (livingMonsters.length > 0) {
+            // Reassign targets to keep it interesting (optional)
+            livingMonsters.forEach(monster => {
+                if (!monster.weakSpot) {
+                    monster.currentTarget = getUniqueTarget(livingMonsters.filter(m => m.id !== monster.id));
+                }
+            });
+            updateTargetIndicators();
+            spawnMonsters(currentRoom === ROOMS_PER_FLOOR); // Refresh display
         }
     }
 
@@ -997,6 +1213,7 @@ const DungeonCrawl = (function() {
             elements.gameScreen.classList.remove('active');
             elements.gameoverScreen.classList.add('active');
 
+            const killerMonster = currentMonsters.find(m => m.hp > 0) || currentMonsters[0];
             elements.gameoverStats.innerHTML = `
                 <div class="stat-row">
                     <span>Reached Floor:</span>
@@ -1012,7 +1229,7 @@ const DungeonCrawl = (function() {
                 </div>
                 <div class="stat-row">
                     <span>Defeated By:</span>
-                    <span>${currentMonster.name}</span>
+                    <span>${killerMonster?.name || 'Unknown'}</span>
                 </div>
             `;
         }, 1000);
@@ -1021,13 +1238,16 @@ const DungeonCrawl = (function() {
     function resetGame() {
         // Reset all state
         gameActive = false;
+        gamePaused = false;
         currentFloor = 1;
         currentRoom = 1;
         currentHeroIndex = 0;
-        currentMonster = null;
+        currentMonsters = [];
         partyGold = 0;
+        dartsRemaining = gameConfig.dartsPerTurn;
         heroStates = [];
         heroStats = [];
+        activeHeroes = [];
         partyBuffs = { bonusDamage: 0, shield: 0, spellBoost: 1 };
 
         // Clear log
@@ -1035,11 +1255,58 @@ const DungeonCrawl = (function() {
             elements.logEntries.innerHTML = '';
         }
 
+        // Hide settings modal if open
+        if (elements.settingsModal) {
+            elements.settingsModal.classList.add('hidden');
+        }
+
         // Switch screens
         elements.victoryScreen?.classList.remove('active');
         elements.gameoverScreen?.classList.remove('active');
         elements.gameScreen?.classList.remove('active');
         elements.titleScreen?.classList.add('active');
+    }
+
+    // =========================================================================
+    // SETTINGS / PAUSE MENU
+    // =========================================================================
+
+    function toggleSettings() {
+        if (!elements.settingsModal) return;
+
+        if (elements.settingsModal.classList.contains('hidden')) {
+            // Opening settings - pause game
+            gamePaused = true;
+            elements.settingsModal.classList.remove('hidden');
+
+            // Update settings display
+            const igDartsEl = document.getElementById('ig-darts-per-turn');
+            if (igDartsEl) igDartsEl.textContent = gameConfig.dartsPerTurn;
+
+            const dartsRemainingEl = document.getElementById('darts-remaining');
+            if (dartsRemainingEl) dartsRemainingEl.textContent = dartsRemaining;
+
+            const heroNameEl = document.getElementById('current-hero-name');
+            if (heroNameEl && heroStates[currentHeroIndex]) {
+                heroNameEl.textContent = heroStates[currentHeroIndex].name;
+            }
+        } else {
+            // Closing settings - resume game
+            gamePaused = false;
+            elements.settingsModal.classList.add('hidden');
+        }
+    }
+
+    function updateInGameDarts(delta) {
+        const newValue = Math.max(1, Math.min(3, gameConfig.dartsPerTurn + delta));
+        gameConfig.dartsPerTurn = newValue;
+
+        const igDartsEl = document.getElementById('ig-darts-per-turn');
+        if (igDartsEl) igDartsEl.textContent = newValue;
+
+        // Also update title screen if we go back
+        const titleDartsEl = document.getElementById('darts-per-turn');
+        if (titleDartsEl) titleDartsEl.textContent = newValue;
     }
 
     // =========================================================================
@@ -1063,6 +1330,8 @@ const DungeonCrawl = (function() {
         startGame,
         handleDartThrow,
         resetGame,
-        isGameActive
+        isGameActive,
+        toggleSettings,
+        updateInGameDarts
     };
 })();

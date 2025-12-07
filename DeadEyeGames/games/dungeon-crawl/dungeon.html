@@ -55,30 +55,56 @@
                     will survive...
                 </p>
 
-                <div class="hero-roster">
-                    <div class="hero-card" data-hero="troy">
+                <!-- Configuration Panel -->
+                <div class="config-panel">
+                    <h3 class="config-title">PARTY CONFIGURATION</h3>
+
+                    <!-- Player Count -->
+                    <div class="config-row">
+                        <label class="config-label">Number of Heroes:</label>
+                        <div class="config-control">
+                            <button class="btn btn-small" id="decrease-players">-</button>
+                            <span id="player-count" class="config-value">5</span>
+                            <button class="btn btn-small" id="increase-players">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Darts Per Turn -->
+                    <div class="config-row">
+                        <label class="config-label">Darts Per Turn:</label>
+                        <div class="config-control">
+                            <button class="btn btn-small" id="decrease-darts">-</button>
+                            <span id="darts-per-turn" class="config-value">3</span>
+                            <button class="btn btn-small" id="increase-darts">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero Roster (editable names) -->
+                <div id="hero-roster" class="hero-roster">
+                    <div class="hero-card" data-hero="0" data-active="true">
                         <div class="hero-icon">⚔️</div>
-                        <div class="hero-name">TROY</div>
+                        <input type="text" class="hero-name-input" value="TROY" maxlength="10">
                         <div class="hero-class">The Blade Master</div>
                     </div>
-                    <div class="hero-card" data-hero="deano">
+                    <div class="hero-card" data-hero="1" data-active="true">
                         <div class="hero-icon">🛡️</div>
-                        <div class="hero-name">DEANO</div>
+                        <input type="text" class="hero-name-input" value="DEANO" maxlength="10">
                         <div class="hero-class">The Tank</div>
                     </div>
-                    <div class="hero-card" data-hero="dave">
+                    <div class="hero-card" data-hero="2" data-active="true">
                         <div class="hero-icon">🔥</div>
-                        <div class="hero-name">DAVE</div>
+                        <input type="text" class="hero-name-input" value="DAVE" maxlength="10">
                         <div class="hero-class">The Fire Mage</div>
                     </div>
-                    <div class="hero-card" data-hero="jack">
+                    <div class="hero-card" data-hero="3" data-active="true">
                         <div class="hero-icon">🏹</div>
-                        <div class="hero-name">JACK</div>
+                        <input type="text" class="hero-name-input" value="JACK" maxlength="10">
                         <div class="hero-class">The Ranger</div>
                     </div>
-                    <div class="hero-card" data-hero="mick">
+                    <div class="hero-card" data-hero="4" data-active="true">
                         <div class="hero-icon">⚡</div>
-                        <div class="hero-name">MICK</div>
+                        <input type="text" class="hero-name-input" value="MICK" maxlength="10">
                         <div class="hero-class">The Storm Caller</div>
                     </div>
                 </div>
@@ -106,6 +132,30 @@
                     <span class="gold-icon">💰</span>
                     <span id="party-gold">0</span>
                 </div>
+                <button id="settings-btn" class="btn btn-small settings-btn" title="Settings">⚙️</button>
+            </div>
+
+            <!-- In-Game Settings Modal -->
+            <div id="settings-modal" class="settings-modal hidden">
+                <div class="settings-content">
+                    <h3>GAME SETTINGS</h3>
+                    <div class="config-row">
+                        <label class="config-label">Darts Per Turn:</label>
+                        <div class="config-control">
+                            <button class="btn btn-small" id="ig-decrease-darts">-</button>
+                            <span id="ig-darts-per-turn" class="config-value">3</span>
+                            <button class="btn btn-small" id="ig-increase-darts">+</button>
+                        </div>
+                    </div>
+                    <div class="settings-info">
+                        <p>Darts Remaining: <span id="darts-remaining">3</span></p>
+                        <p>Current Hero: <span id="current-hero-name">TROY</span></p>
+                    </div>
+                    <div class="settings-buttons">
+                        <button id="resume-btn" class="btn btn-primary">RESUME</button>
+                        <button id="quit-btn" class="btn btn-secondary">QUIT TO MENU</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Dungeon View -->
@@ -123,11 +173,9 @@
                         <!-- Monster spawns here -->
                     </div>
 
-                    <!-- Combat Target Indicator -->
-                    <div id="target-indicator" class="target-indicator">
-                        <span class="target-label">HIT</span>
-                        <span id="target-number" class="target-number">20</span>
-                        <span class="target-hint">to deal damage!</span>
+                    <!-- Combat Target Indicators (multiple creatures) -->
+                    <div id="target-indicators" class="target-indicators">
+                        <!-- Target indicators populated by JS for each creature -->
                     </div>
                 </div>
 
@@ -151,6 +199,10 @@
                     <span class="attacker-label">NOW ATTACKING:</span>
                     <span id="attacker-name" class="attacker-name">TROY</span>
                     <span id="attacker-class" class="attacker-class">The Blade Master</span>
+                    <div class="darts-remaining-display">
+                        <span class="darts-label">DARTS:</span>
+                        <span id="darts-remaining-display" class="darts-count">🎯 🎯 🎯</span>
+                    </div>
                 </div>
 
                 <!-- Spell Panel -->
@@ -216,6 +268,7 @@
     <script src="/games/dungeon-crawl/dungeon.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize darts client
             DartsClient.init({
                 onDartThrown: (dart) => {
                     if (DungeonCrawl.isGameActive()) {
@@ -235,6 +288,48 @@
                 }
             });
 
+            // =============================================
+            // TITLE SCREEN CONFIGURATION
+            // =============================================
+            let playerCount = 5;
+            let dartsPerTurn = 3;
+
+            const playerCountEl = document.getElementById('player-count');
+            const dartsPerTurnEl = document.getElementById('darts-per-turn');
+            const heroCards = document.querySelectorAll('.hero-card');
+
+            function updatePlayerCount(delta) {
+                playerCount = Math.max(1, Math.min(5, playerCount + delta));
+                playerCountEl.textContent = playerCount;
+
+                // Show/hide hero cards based on count
+                heroCards.forEach((card, index) => {
+                    if (index < playerCount) {
+                        card.dataset.active = 'true';
+                        card.classList.remove('inactive');
+                    } else {
+                        card.dataset.active = 'false';
+                        card.classList.add('inactive');
+                    }
+                });
+            }
+
+            function updateDartsPerTurn(delta) {
+                dartsPerTurn = Math.max(1, Math.min(3, dartsPerTurn + delta));
+                dartsPerTurnEl.textContent = dartsPerTurn;
+            }
+
+            // Player count buttons
+            document.getElementById('decrease-players')?.addEventListener('click', () => updatePlayerCount(-1));
+            document.getElementById('increase-players')?.addEventListener('click', () => updatePlayerCount(1));
+
+            // Darts per turn buttons
+            document.getElementById('decrease-darts')?.addEventListener('click', () => updateDartsPerTurn(-1));
+            document.getElementById('increase-darts')?.addEventListener('click', () => updateDartsPerTurn(1));
+
+            // =============================================
+            // GAME CONTROLS
+            // =============================================
             document.getElementById('start-game-btn')?.addEventListener('click', () => {
                 DungeonCrawl.startGame();
             });
@@ -245,6 +340,30 @@
 
             document.getElementById('retry-btn')?.addEventListener('click', () => {
                 DungeonCrawl.resetGame();
+            });
+
+            // =============================================
+            // IN-GAME SETTINGS MENU
+            // =============================================
+            document.getElementById('settings-btn')?.addEventListener('click', () => {
+                DungeonCrawl.toggleSettings();
+            });
+
+            document.getElementById('resume-btn')?.addEventListener('click', () => {
+                DungeonCrawl.toggleSettings();
+            });
+
+            document.getElementById('quit-btn')?.addEventListener('click', () => {
+                DungeonCrawl.resetGame();
+            });
+
+            // In-game darts adjustment
+            document.getElementById('ig-decrease-darts')?.addEventListener('click', () => {
+                DungeonCrawl.updateInGameDarts(-1);
+            });
+
+            document.getElementById('ig-increase-darts')?.addEventListener('click', () => {
+                DungeonCrawl.updateInGameDarts(1);
             });
         });
     </script>
