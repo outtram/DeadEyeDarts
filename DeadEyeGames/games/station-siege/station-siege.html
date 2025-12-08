@@ -71,9 +71,60 @@
                     </div>
                 </div>
 
+                <!-- Game Mode Selection -->
+                <div class="mode-selection">
+                    <div class="mode-tabs">
+                        <button class="mode-tab active" data-mode="solo">SOLO</button>
+                        <button class="mode-tab" data-mode="coop">CO-OP</button>
+                    </div>
+
+                    <!-- Solo Mode Options -->
+                    <div id="solo-options" class="mode-options active">
+                        <div class="seed-section">
+                            <label class="seed-label">GAME SEED</label>
+                            <div class="seed-input-row">
+                                <input type="text" id="seed-input" class="seed-input" placeholder="Random" maxlength="12">
+                                <button id="random-seed-btn" class="btn btn-secondary btn-small">🎲</button>
+                            </div>
+                            <p class="seed-hint">Same seed = same game. Share with friends to compete!</p>
+                        </div>
+                        <div class="player-name-section">
+                            <label class="seed-label">YOUR NAME</label>
+                            <input type="text" id="player-name" class="seed-input" placeholder="Player" maxlength="16">
+                        </div>
+                    </div>
+
+                    <!-- Co-Op Mode Options -->
+                    <div id="coop-options" class="mode-options">
+                        <div class="coop-section">
+                            <label class="seed-label">YOUR NAME</label>
+                            <input type="text" id="coop-player-name" class="seed-input" placeholder="Player" maxlength="16">
+                        </div>
+                        <div class="coop-section">
+                            <label class="seed-label">ROOM CODE</label>
+                            <div class="seed-input-row">
+                                <input type="text" id="room-code" class="seed-input" placeholder="Enter code" maxlength="8">
+                                <button id="create-room-btn" class="btn btn-secondary btn-small">CREATE</button>
+                            </div>
+                        </div>
+                        <div id="players-list" class="players-list">
+                            <!-- Connected players shown here -->
+                        </div>
+                        <p class="seed-hint">All players defend the same station together!</p>
+                    </div>
+                </div>
+
                 <button id="start-game-btn" class="btn btn-primary btn-large glow-pulse">
                     LAUNCH DEFENSE
                 </button>
+
+                <!-- Leaderboard Preview -->
+                <div class="leaderboard-preview">
+                    <h4>TOP SCORES</h4>
+                    <div id="leaderboard-list" class="leaderboard-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -86,6 +137,10 @@
                         <div class="round-display">
                             <span class="label">ROUND</span>
                             <span id="round-number" class="value">1</span>
+                        </div>
+                        <div class="seed-display">
+                            <span class="label">SEED</span>
+                            <span id="current-seed" class="value seed-value">------</span>
                         </div>
                         <div id="alert-status" class="alert-status warning">
                             <span class="alert-text">WARNING</span>
@@ -180,6 +235,8 @@
     <script src="/games/station-siege/station-siege.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            let currentMode = 'solo';
+
             // Initialize darts client
             DartsClient.init({
                 onDartThrown: (dart) => {
@@ -200,8 +257,33 @@
                 }
             });
 
+            // Mode tab switching
+            document.querySelectorAll('.mode-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.mode-options').forEach(o => o.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentMode = tab.dataset.mode;
+                    document.getElementById(`${currentMode}-options`).classList.add('active');
+                    StationSiege.setGameMode(currentMode);
+                });
+            });
+
+            // Random seed button
+            document.getElementById('random-seed-btn')?.addEventListener('click', () => {
+                const seed = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+                document.getElementById('seed-input').value = seed;
+            });
+
             // Start game button
             document.getElementById('start-game-btn')?.addEventListener('click', () => {
+                // Set player name
+                const nameField = currentMode === 'solo'
+                    ? document.getElementById('player-name')
+                    : document.getElementById('coop-player-name');
+                if (nameField && nameField.value.trim()) {
+                    StationSiege.setPlayerName(nameField.value.trim());
+                }
                 StationSiege.startGame();
             });
 
@@ -209,6 +291,39 @@
             document.getElementById('retry-btn')?.addEventListener('click', () => {
                 StationSiege.startGame();
             });
+
+            // Create room button (for coop)
+            document.getElementById('create-room-btn')?.addEventListener('click', () => {
+                const roomInput = document.getElementById('room-code');
+                let roomCode = roomInput.value.trim();
+                if (!roomCode) {
+                    // Generate random room code
+                    roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    roomInput.value = roomCode;
+                }
+                // For now, just show a message - full multiplayer requires server support
+                alert(`Room "${roomCode}" created! Share this code with friends.\n\nNote: Full multiplayer requires the server to be hosted online.`);
+            });
+
+            // Load leaderboard on startup
+            loadLeaderboard();
+
+            function loadLeaderboard() {
+                const leaderboard = StationSiege.getLeaderboard();
+                const list = document.getElementById('leaderboard-list');
+                if (list && leaderboard.length > 0) {
+                    list.innerHTML = leaderboard.slice(0, 5).map((entry, i) => `
+                        <div class="leaderboard-entry">
+                            <span class="rank">#${i + 1}</span>
+                            <span class="name">${entry.player || 'Anonymous'}</span>
+                            <span class="score">${entry.score}</span>
+                            <span class="seed">[${entry.seed?.toString().padStart(6, '0') || '------'}]</span>
+                        </div>
+                    `).join('');
+                } else if (list) {
+                    list.innerHTML = '<div class="no-scores">No scores yet. Be the first!</div>';
+                }
+            }
         });
     </script>
 </body>

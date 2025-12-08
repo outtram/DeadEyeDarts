@@ -2,9 +2,116 @@
  * Station Siege - Space Defense Dart Game
  * Defend your station by throwing darts at hostile spacecraft!
  * Based on Defender 4 mechanics, integrated with autodarts.io
+ *
+ * Features:
+ * - Seeded RNG for reproducible games (compare scores with friends)
+ * - Cooperative multiplayer (multiple players defend same station)
+ * - Game event logging for replays and leaderboards
  */
 
 const StationSiege = (function() {
+    // =========================================================================
+    // SEEDED RANDOM NUMBER GENERATOR (Mulberry32)
+    // =========================================================================
+
+    let currentSeed = null;
+    let rngState = null;
+
+    // Mulberry32 - fast, high-quality 32-bit PRNG
+    function createRNG(seed) {
+        let state = seed;
+        return function() {
+            state |= 0;
+            state = state + 0x6D2B79F5 | 0;
+            let t = Math.imul(state ^ state >>> 15, 1 | state);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
+    // Seeded random function (use this instead of Math.random())
+    function seededRandom() {
+        if (rngState) {
+            return rngState();
+        }
+        return Math.random();
+    }
+
+    // Generate a seed from string (for shareable codes)
+    function stringToSeed(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return Math.abs(hash);
+    }
+
+    // Generate random seed
+    function generateRandomSeed() {
+        return Math.floor(Math.random() * 1000000);
+    }
+
+    // Format seed for display
+    function formatSeed(seed) {
+        return seed.toString().padStart(6, '0');
+    }
+
+    // =========================================================================
+    // GAME EVENT LOGGING
+    // =========================================================================
+
+    let gameLog = [];
+    let gameStartTime = null;
+
+    function logEvent(type, data = {}) {
+        if (!gameStartTime) return;
+
+        const event = {
+            time: Date.now() - gameStartTime,
+            round: round,
+            type: type,
+            ...data
+        };
+        gameLog.push(event);
+
+        // Broadcast to multiplayer if connected
+        if (multiplayerSocket && multiplayerRoom) {
+            multiplayerSocket.emit('game_event', {
+                room: multiplayerRoom,
+                player: playerName,
+                event: event
+            });
+        }
+    }
+
+    function getGameSummary() {
+        return {
+            seed: currentSeed,
+            finalScore: score,
+            roundsPlayed: round,
+            duration: gameStartTime ? Date.now() - gameStartTime : 0,
+            events: gameLog,
+            player: playerName,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    // =========================================================================
+    // MULTIPLAYER STATE
+    // =========================================================================
+
+    let multiplayerSocket = null;
+    let multiplayerRoom = null;
+    let playerName = 'Player';
+    let isHost = false;
+    let connectedPlayers = [];
+    let gameMode = 'solo'; // 'solo', 'coop'
+
+    // Shared state for coop (synced from host)
+    let sharedState = null;
+
     // =========================================================================
     // SOUND EFFECTS (Space/Zapping sounds)
     // =========================================================================
@@ -297,8 +404,29 @@ const StationSiege = (function() {
         generateDartboard();
     }
 
-    function startGame() {
+    function startGame(seedInput = null) {
         if (!elements.titleScreen) initElements();
+
+        // Initialize seed
+        if (seedInput !== null) {
+            currentSeed = typeof seedInput === 'string' ? stringToSeed(seedInput) : seedInput;
+        } else {
+            // Check for seed input field
+            const seedField = document.getElementById('seed-input');
+            if (seedField && seedField.value.trim()) {
+                const val = seedField.value.trim();
+                currentSeed = /^\d+$/.test(val) ? parseInt(val) : stringToSeed(val);
+            } else {
+                currentSeed = generateRandomSeed();
+            }
+        }
+
+        // Initialize seeded RNG
+        rngState = createRNG(currentSeed);
+
+        // Reset game log
+        gameLog = [];
+        gameStartTime = Date.now();
 
         // Reset game state
         gameActive = true;
@@ -313,13 +441,19 @@ const StationSiege = (function() {
         empActive = false;
         empRoundsLeft = 0;
 
-        // Shuffle and distribute numbers
+        // Shuffle and distribute numbers (using seeded RNG)
         shuffleNumbers();
 
         // Switch screens
         elements.titleScreen.classList.remove('active');
         elements.gameoverScreen.classList.remove('active');
         elements.gameScreen.classList.add('active');
+
+        // Update seed display
+        const seedDisplay = document.getElementById('current-seed');
+        if (seedDisplay) {
+            seedDisplay.textContent = formatSeed(currentSeed);
+        }
 
         // Resize canvas
         resizeCanvas();
@@ -330,6 +464,9 @@ const StationSiege = (function() {
             addRandomPowerUp();
             showAnnouncement('ARMORY STOCKED!');
         }, 500);
+
+        // Log game start
+        logEvent('game_start', { seed: currentSeed, mode: gameMode, player: playerName });
 
         // Update UI
         updateUI();
@@ -342,17 +479,17 @@ const StationSiege = (function() {
         if (animationId) cancelAnimationFrame(animationId);
         renderLoop();
 
-        console.log('StationSiege: Game started!');
+        console.log(`StationSiege: Game started! Seed: ${formatSeed(currentSeed)}`);
     }
 
     function shuffleNumbers() {
-        // Shuffle 1-20 for hostile number pool
+        // Shuffle 1-20 for hostile number pool using seeded RNG
         let numbers = [];
         for (let i = 1; i <= 20; i++) numbers.push(i);
 
-        // Fisher-Yates shuffle
+        // Fisher-Yates shuffle with seeded random
         for (let i = numbers.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = Math.floor(seededRandom() * (i + 1));
             [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
         }
 
@@ -486,7 +623,7 @@ const StationSiege = (function() {
         const alertLevel = getAlertLevel();
 
         // Dreadnought: Round 5+, RED_ALERT only, 10% chance, max 1
-        if (round >= 5 && alertLevel === 'RED_ALERT' && Math.random() < 0.1) {
+        if (round >= 5 && alertLevel === 'RED_ALERT' && seededRandom() < 0.1) {
             const hasDreadnought = hostiles.some(h => h.type === 'DREADNOUGHT');
             if (!hasDreadnought) {
                 type = 'DREADNOUGHT';
@@ -495,15 +632,15 @@ const StationSiege = (function() {
             }
         }
         // Hacker: Round 3+, 15% chance
-        else if (round >= 3 && Math.random() < 0.15) {
+        else if (round >= 3 && seededRandom() < 0.15) {
             type = 'HACKER';
         }
         // Frigate: Round 4+
-        else if (round >= 4 && Math.random() < (0.25 + round / 60)) {
+        else if (round >= 4 && seededRandom() < (0.25 + round / 60)) {
             type = 'FRIGATE';
         }
         // Fighter: Round 6+
-        else if (round >= 6 && Math.random() < (0.75 - round / 40)) {
+        else if (round >= 6 && seededRandom() < (0.75 - round / 40)) {
             type = 'FIGHTER';
         }
 
@@ -515,7 +652,7 @@ const StationSiege = (function() {
         // Calculate HP
         let hp = 1;
         if (type !== 'DREADNOUGHT') {
-            const baseHP = Math.ceil(Math.random() * (1 + round / 5));
+            const baseHP = Math.ceil(seededRandom() * (1 + round / 5));
             if (type === 'FIGHTER') {
                 hp = Math.max(1, Math.min(baseHP - 1, typeData.maxHP));
             } else if (type === 'FRIGATE') {
@@ -526,7 +663,7 @@ const StationSiege = (function() {
         }
 
         const hostile = {
-            id: Date.now() + Math.random(),
+            id: Date.now() + seededRandom(),
             type: type,
             name: typeData.name,
             color: typeData.color,
@@ -564,7 +701,7 @@ const StationSiege = (function() {
         const endY = canvas.height - 80;
 
         hostile.y = startY + (endY - startY) * progress;
-        hostile.x = 100 + Math.random() * (canvas.width - 200);
+        hostile.x = 100 + seededRandom() * (canvas.width - 200);
     }
 
     function advanceHostiles() {
@@ -611,7 +748,7 @@ const StationSiege = (function() {
 
         if (hostile.type === 'HACKER' && armory.length > 0) {
             // Steal random item
-            const stolenIndex = Math.floor(Math.random() * armory.length);
+            const stolenIndex = Math.floor(seededRandom() * armory.length);
             armory.splice(stolenIndex, 1);
             showAnnouncement('ITEM STOLEN BY HACKER!');
         } else {
@@ -668,7 +805,7 @@ const StationSiege = (function() {
         }
 
         // Random power-up chance (40% for regular kills)
-        if (Math.random() < 0.4) {
+        if (seededRandom() < 0.4) {
             addRandomPowerUp();
         }
 
@@ -747,7 +884,7 @@ const StationSiege = (function() {
             // Just regular bullseye - damage random hostile
             playSound('laser');
             if (hostiles.length > 0) {
-                const target = hostiles[Math.floor(Math.random() * hostiles.length)];
+                const target = hostiles[Math.floor(seededRandom() * hostiles.length)];
                 const damage = multiplier === 2 ? 2 : 1;
                 target.hp -= damage;
                 score += Math.min(damage, target.maxHP);
@@ -838,9 +975,9 @@ const StationSiege = (function() {
                 break;
 
             case 'FORCEFIELD':
-                const ffStrength = 3 + Math.floor(Math.random() * 3);
+                const ffStrength = 3 + Math.floor(seededRandom() * 3);
                 forceFields.push({
-                    y: 150 + Math.random() * 200,
+                    y: 150 + seededRandom() * 200,
                     strength: ffStrength
                 });
                 playSound('forcefield');
@@ -848,7 +985,7 @@ const StationSiege = (function() {
                 break;
 
             case 'SHIELD':
-                const shieldRestore = (1 + Math.floor(Math.random() * 2)) * multiplier;
+                const shieldRestore = (1 + Math.floor(seededRandom() * 2)) * multiplier;
                 shields = Math.min(CONFIG.MAX_SHIELDS, shields + shieldRestore);
                 showAnnouncement(`+${shieldRestore} SHIELDS RESTORED!`);
                 break;
@@ -893,11 +1030,11 @@ const StationSiege = (function() {
 
         if (availableNumbers.length === 0) return;
 
-        const number = availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
+        const number = availableNumbers[Math.floor(seededRandom() * availableNumbers.length)];
 
         // Pick random type
         const types = Object.keys(POWERUP_TYPES);
-        const type = types[Math.floor(Math.random() * types.length)];
+        const type = types[Math.floor(seededRandom() * types.length)];
         const typeData = POWERUP_TYPES[type];
 
         armory.push({
@@ -1337,15 +1474,29 @@ const StationSiege = (function() {
         gameActive = false;
         playSound('gameover');
 
+        // Log game over
+        logEvent('game_over', { finalScore: score, roundsPlayed: round });
+
         if (animationId) {
             cancelAnimationFrame(animationId);
         }
+
+        // Get game summary for leaderboard
+        const summary = getGameSummary();
+        console.log('Game Summary:', summary);
+
+        // Save to local storage for leaderboard
+        saveToLeaderboard(summary);
 
         setTimeout(() => {
             elements.gameScreen.classList.remove('active');
             elements.gameoverScreen.classList.add('active');
 
             elements.gameoverStats.innerHTML = `
+                <div class="stat-row">
+                    <span>Seed:</span>
+                    <span class="seed-code">${formatSeed(currentSeed)}</span>
+                </div>
                 <div class="stat-row">
                     <span>Rounds Survived:</span>
                     <span>${round}</span>
@@ -1358,8 +1509,171 @@ const StationSiege = (function() {
                     <span>Hostiles Destroyed:</span>
                     <span>${Math.floor(score / 2)}</span>
                 </div>
+                <div class="stat-row share-row">
+                    <span>Challenge Friends:</span>
+                    <button onclick="StationSiege.copySeed()" class="btn btn-secondary btn-small">
+                        Copy Seed
+                    </button>
+                </div>
             `;
         }, 1000);
+    }
+
+    // =========================================================================
+    // LEADERBOARD
+    // =========================================================================
+
+    function saveToLeaderboard(summary) {
+        try {
+            const key = `station_siege_scores_${summary.seed}`;
+            let scores = JSON.parse(localStorage.getItem(key) || '[]');
+            scores.push({
+                player: summary.player,
+                score: summary.finalScore,
+                rounds: summary.roundsPlayed,
+                timestamp: summary.timestamp
+            });
+            // Keep top 10 scores per seed
+            scores.sort((a, b) => b.score - a.score);
+            scores = scores.slice(0, 10);
+            localStorage.setItem(key, JSON.stringify(scores));
+
+            // Also save to all-time leaderboard
+            let allTime = JSON.parse(localStorage.getItem('station_siege_alltime') || '[]');
+            allTime.push({
+                player: summary.player,
+                score: summary.finalScore,
+                rounds: summary.roundsPlayed,
+                seed: summary.seed,
+                timestamp: summary.timestamp
+            });
+            allTime.sort((a, b) => b.score - a.score);
+            allTime = allTime.slice(0, 50);
+            localStorage.setItem('station_siege_alltime', JSON.stringify(allTime));
+        } catch (e) {
+            console.log('Could not save to leaderboard:', e);
+        }
+    }
+
+    function getLeaderboard(seed = null) {
+        try {
+            if (seed) {
+                const key = `station_siege_scores_${seed}`;
+                return JSON.parse(localStorage.getItem(key) || '[]');
+            }
+            return JSON.parse(localStorage.getItem('station_siege_alltime') || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function copySeed() {
+        const seedText = formatSeed(currentSeed);
+        navigator.clipboard.writeText(seedText).then(() => {
+            showAnnouncement(`SEED ${seedText} COPIED!`);
+        }).catch(() => {
+            showAnnouncement(`SEED: ${seedText}`);
+        });
+    }
+
+    // =========================================================================
+    // MULTIPLAYER FUNCTIONS
+    // =========================================================================
+
+    function initMultiplayer(socket, name) {
+        multiplayerSocket = socket;
+        playerName = name || 'Player';
+
+        // Listen for multiplayer events
+        socket.on('player_joined', (data) => {
+            connectedPlayers = data.players;
+            showAnnouncement(`${data.name} JOINED!`);
+            updatePlayersDisplay();
+        });
+
+        socket.on('player_left', (data) => {
+            connectedPlayers = data.players;
+            showAnnouncement(`${data.name} LEFT`);
+            updatePlayersDisplay();
+        });
+
+        socket.on('game_start_sync', (data) => {
+            // Another player started the game - sync if in coop mode
+            if (gameMode === 'coop' && !isHost) {
+                startGame(data.seed);
+            }
+        });
+
+        socket.on('dart_event', (data) => {
+            // In coop mode, process dart throws from other players
+            if (gameMode === 'coop' && data.player !== playerName && gameActive) {
+                handleDartThrow(data.dart, data.player);
+            }
+        });
+
+        socket.on('game_state_sync', (data) => {
+            // Sync game state from host in coop mode
+            if (gameMode === 'coop' && !isHost) {
+                syncGameState(data);
+            }
+        });
+    }
+
+    function createRoom(roomCode) {
+        if (!multiplayerSocket) return;
+        multiplayerRoom = roomCode;
+        isHost = true;
+        multiplayerSocket.emit('create_room', { room: roomCode, player: playerName });
+    }
+
+    function joinRoom(roomCode) {
+        if (!multiplayerSocket) return;
+        multiplayerRoom = roomCode;
+        isHost = false;
+        multiplayerSocket.emit('join_room', { room: roomCode, player: playerName });
+    }
+
+    function setGameMode(mode) {
+        gameMode = mode;
+    }
+
+    function setPlayerName(name) {
+        playerName = name;
+    }
+
+    function updatePlayersDisplay() {
+        const display = document.getElementById('players-list');
+        if (display) {
+            display.innerHTML = connectedPlayers.map(p =>
+                `<span class="player-tag">${p}</span>`
+            ).join('');
+        }
+    }
+
+    function syncGameState(state) {
+        // Sync shared state from host
+        if (state.hostiles) hostiles = state.hostiles;
+        if (state.armory) armory = state.armory;
+        if (state.shields !== undefined) shields = state.shields;
+        if (state.score !== undefined) score = state.score;
+        if (state.round !== undefined) round = state.round;
+        updateUI();
+        updateArmoryDisplay();
+    }
+
+    function broadcastGameState() {
+        if (multiplayerSocket && multiplayerRoom && isHost) {
+            multiplayerSocket.emit('game_state', {
+                room: multiplayerRoom,
+                state: {
+                    hostiles: hostiles,
+                    armory: armory,
+                    shields: shields,
+                    score: score,
+                    round: round
+                }
+            });
+        }
     }
 
     // =========================================================================
@@ -1370,9 +1684,23 @@ const StationSiege = (function() {
         return gameActive;
     }
 
+    function getCurrentSeed() {
+        return currentSeed;
+    }
+
     return {
         startGame,
         handleDartThrow,
-        isGameActive
+        isGameActive,
+        getCurrentSeed,
+        getLeaderboard,
+        copySeed,
+        getGameSummary,
+        // Multiplayer
+        initMultiplayer,
+        createRoom,
+        joinRoom,
+        setGameMode,
+        setPlayerName
     };
 })();
